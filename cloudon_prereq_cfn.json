@@ -1,0 +1,373 @@
+{
+  "AWSTemplateFormatVersion" : "2010-09-09",
+  "Description" : "Builds Rubrik CloudOn prerequisites",
+
+  "Metadata" : {
+    "AWS::CloudFormation::Interface" : {
+      "ParameterGroups" : [
+        {
+          "Label"                         : { "default" : "Network Configuration" },
+          "Parameters"                    : [ "VPC", "OnPremCIDRBlock" ]
+        },
+        {
+          "Label"                         : { "default" : "Storage Configuration" },
+          "Parameters"                    : [ "ExistingBucketBool", "S3BucketName" ]
+        },
+        {
+          "Label"                         : { "default" : "User Configuration" },
+          "Parameters"                    : [ "ExistingUserBool", "UserAccountName" ]
+        }
+      ],
+      "ParameterLabels" : {
+        "VPCName"                       : { "default" : "VPC to use for creating required elements" },
+        "OnPremCIDRBlock"               : { "default" : "CIDR Block for On-Premises Rubrik Cluster" },
+        "ExistingBucketBool"            : { "default" : "Use an existing S3 bucket?"},
+        "S3BucketName"                  : { "default" : "S3 Bucket Name to use for CloudOn" },
+        "ExistingUserBool"              : { "default" : "Use an existing user account?"},
+        "UserAccountName"               : { "default" : "User account name" }
+      }
+    }
+  },
+
+  "Parameters" : {
+    "VPC" : {
+      "Type"				: "AWS::EC2::VPC::Id",
+      "Description"			: "Select the VPC to create the required elements in."
+    },
+    "OnPremCIDRBlock" : {
+      "Type"				: "String",
+      "Default"			: "10.79.0.0/24",
+      "Description"			: "Enter the CIDR block for your on-premises Rubrik cluster.",
+      "AllowedPattern"		: "(\\d{1,3})\\.(\\d{1,3})\\.(\\d{1,3})\\.(\\d{1,3})/(\\d{1,2})",
+      "ConstraintDescription"		: "Please enter a valid IP CIDR range of the form x.x.x.x/x."
+    },
+    "ExistingBucketBool" : {
+      "Type"				: "String",
+      "Default"			: "false",
+      "Description"			: "Use an existing S3 bucket for CloudOn storage",
+      "AllowedValues": [ "true", "false" ],
+      "ConstraintDescription"		: "Enter either 'true' or 'false'"
+    },
+    "S3BucketName" : {
+      "Type"				: "String",
+      "Description"			: "The existing or new S3 bucket name"
+    },
+    "ExistingUserBool" : {
+      "Type"				: "String",
+      "Default"			: "false",
+      "Description"			: "Use an existing user for CloudOn",
+      "AllowedValues": [ "true", "false" ],
+      "ConstraintDescription"		: "Enter either 'true' or 'false'"
+    },
+    "UserAccountName" : {
+      "Type"				: "String",
+      "Description"			: "The existing or new AWS user account name"
+    }
+  },
+
+  "Conditions" : {
+    "CreateBucket" : { "Fn::Equals" : [ {"Ref" : "ExistingBucketBool"}, "false" ] },
+    "CreateUserAccount" : { "Fn::Equals" : [ {"Ref" : "ExistingUserBool"}, "false" ] },
+    "UseExistingAccount" : { "Fn::Equals" : [ {"Ref" : "ExistingUserBool"}, "true" ] }
+  },
+
+  "Resources" : {
+    "CloudOutS3Bucket" : {
+      "Type": "AWS::S3::Bucket",
+      "Condition" : "CreateBucket",
+      "Properties" : {
+        "BucketName" : { "Ref" : "S3BucketName" }
+      }
+    },
+
+    "CloudOnSecurityGroup" : {
+      "Type" : "AWS::EC2::SecurityGroup",
+      "Properties" : {
+        "GroupName" : "Rubrik CloudOn",
+        "GroupDescription" : "Security Group to allow Rubrik CloudOut/CloudOn replication and management",
+        "SecurityGroupEgress" : [],
+        "SecurityGroupIngress" : [
+          {
+            "IpProtocol" : "tcp",
+            "FromPort" : "2002",
+            "ToPort" : "2002",
+            "CidrIp" : { "Ref" : "OnPremCIDRBlock" }
+          },
+          {
+            "IpProtocol" : "tcp",
+            "FromPort" : "7780",
+            "ToPort" : "7780",
+            "CidrIp" : { "Ref" : "OnPremCIDRBlock" }
+          }
+        ],
+        "VpcId" : { "Ref" : "VPC" }
+      }
+    },
+
+    "VmImportRole": {
+      "Type": "AWS::IAM::Role",
+      "Properties": {
+        "AssumeRolePolicyDocument": {
+          "Version" : "2012-10-17",
+          "Statement": [
+            {
+            "Effect": "Allow",
+              "Principal": { "Service": "vmie.amazonaws.com" },
+              "Action": "sts:AssumeRole",
+              "Condition": {
+                "StringEquals":{ "sts:Externalid": "vmimport" }
+              }
+            }
+          ]
+        },
+        "Path": "/",
+        "Policies": [],
+        "RoleName": "vmimport"
+      }
+    },
+
+    "VmImportPolicy": {
+      "Type": "AWS::IAM::Policy",
+      "Properties": {
+        "PolicyName": "rubrik_vmimport_role_policy",
+        "PolicyDocument": {
+          "Version": "2012-10-17",
+          "Statement": [
+            {
+              "Effect": "Allow",
+              "Action": [
+                  "s3:ListBucket",
+                  "s3:GetBucketLocation",
+                  "s3:FullAccess"
+              ],
+              "Resource": [
+                  { "Fn::Join" : [ "", [ "arn:aws:s3:::", { "Ref": "S3BucketName" } ] ] }
+              ]
+            },
+            {
+              "Effect": "Allow",
+              "Action": [
+                  "s3:GetObject"
+              ],
+              "Resource": [
+                { "Fn::Join" : [ "", [ "arn:aws:s3:::", { "Ref": "S3BucketName" }, "/*" ] ] }
+              ]
+            },
+            {
+              "Effect": "Allow",
+              "Action":[
+                  "ec2:ModifySnapshotAttribute",
+                  "ec2:CopySnapshot",
+                  "ec2:RegisterImage",
+                  "ec2:Describe*",
+                  "ec2:FullAccess"
+              ],
+              "Resource": "*"
+            }
+          ]
+        },
+        "Roles": [ { "Ref": "VmImportRole" } ]
+      }
+    },
+
+    "CloudOnUser": {
+      "Type": "AWS::IAM::User",
+      "Condition" : "CreateUserAccount",
+      "Properties": {
+        "UserName": { "Ref" : "UserAccountName" }
+      }
+    },
+
+    "CloudOnUserKeys": {
+      "Type": "AWS::IAM::AccessKey",
+      "Condition" : "CreateUserAccount",
+      "DependsOn": "CloudOnUser",
+      "Properties": {
+        "UserName": { "Ref" : "UserAccountName" }
+      }
+    },
+
+    "CloudOnUserPolicyNewUser": {
+      "Type": "AWS::IAM::Policy",
+      "Condition": "CreateUserAccount",
+      "DependsOn": "CloudOnUser",
+      "Properties": {
+        "PolicyName": "rubrik_cloudon_user_policy",
+        "PolicyDocument": {
+          "Version": "2012-10-17",
+          "Statement": [
+            {
+              "Effect": "Allow",
+              "Action": [
+                  "s3:ListAllMyBuckets"
+              ],
+              "Resource": "*"
+            },
+            {
+              "Effect": "Allow",
+              "Action": [
+                "s3:CreateBucket",
+                "s3:DeleteBucket",
+                "s3:DeleteObject",
+                "s3:GetBucketLocation",
+                "s3:GetObject",
+                "s3:ListBucket",
+                "s3:PutObject"
+              ],
+              "Resource": [
+                { "Fn::Join" : [ "", [ "arn:aws:s3:::", { "Ref": "S3BucketName" } ] ] },
+                { "Fn::Join" : [ "", [ "arn:aws:s3:::", { "Ref": "S3BucketName" }, "/*" ] ] }
+              ]
+            },
+            {
+              "Effect": "Allow",
+              "Action": [
+                  "iam:CreateRole",
+                  "iam:PutRolePolicy"
+              ],
+              "Resource": "*"
+            },
+            {
+              "Effect": "Allow",
+              "Action":[
+                "ec2:CancelConversionTask",
+                "ec2:CancelExportTask",
+                "ec2:CreateImage",
+                "ec2:CreateInstanceExportTask",
+                "ec2:CreateTags",
+                "ec2:DeleteTags",
+                "ec2:DescribeConversionTasks",
+                "ec2:DescribeExportTasks",
+                "ec2:DescribeInstanceAttribute",
+                "ec2:DescribeInstanceStatus",
+                "ec2:DescribeInstances",
+                "ec2:DescribeImages",
+                "ec2:DescribeSecurityGroups",
+                "ec2:RunInstances",
+                "ec2:DescribeTags",
+                "ec2:DescribeVolumes",
+                "ec2:ImportInstance",
+                "ec2:ImportVolume",
+                "ec2:DeleteVolume",
+                "ec2:DeregisterImage",
+                "ec2:StartInstances",
+                "ec2:StopInstances",
+                "ec2:TerminateInstances",
+                "ec2:ImportImage",
+                "ec2:ImportSnapshot",
+                "ec2:DescribeImportImageTasks",
+                "ec2:DescribeImportSnapshotTasks",
+                "ec2:CancelImportTask",
+                "ec2:DescribeVpcs",
+                "ec2:DescribeSubnets",
+                "ec2:DeleteSnapshot"
+              ],
+              "Resource": "*"
+            }
+          ]
+        },
+        "Users": [ { "Ref" : "UserAccountName" } ]
+      }
+    },
+
+
+    "CloudOnUserPolicyExistingUser": {
+      "Type": "AWS::IAM::Policy",
+      "Condition": "UseExistingAccount",
+      "Properties": {
+        "PolicyName": "rubrik_cloudon_user_policy",
+        "PolicyDocument": {
+          "Version": "2012-10-17",
+          "Statement": [
+            {
+              "Effect": "Allow",
+              "Action": [
+                  "s3:ListAllMyBuckets"
+              ],
+              "Resource": "*"
+            },
+            {
+              "Effect": "Allow",
+              "Action": [
+                "s3:CreateBucket",
+                "s3:DeleteBucket",
+                "s3:DeleteObject",
+                "s3:GetBucketLocation",
+                "s3:GetObject",
+                "s3:ListBucket",
+                "s3:PutObject"
+              ],
+              "Resource": [
+                { "Fn::Join" : [ "", [ "arn:aws:s3:::", { "Ref": "S3BucketName" } ] ] },
+                { "Fn::Join" : [ "", [ "arn:aws:s3:::", { "Ref": "S3BucketName" }, "/*" ] ] }
+              ]
+            },
+            {
+              "Effect": "Allow",
+              "Action": [
+                  "iam:CreateRole",
+                  "iam:PutRolePolicy"
+              ],
+              "Resource": "*"
+            },
+            {
+              "Effect": "Allow",
+              "Action":[
+                "ec2:CancelConversionTask",
+                "ec2:CancelExportTask",
+                "ec2:CreateImage",
+                "ec2:CreateInstanceExportTask",
+                "ec2:CreateTags",
+                "ec2:DeleteTags",
+                "ec2:DescribeConversionTasks",
+                "ec2:DescribeExportTasks",
+                "ec2:DescribeInstanceAttribute",
+                "ec2:DescribeInstanceStatus",
+                "ec2:DescribeInstances",
+                "ec2:DescribeImages",
+                "ec2:DescribeSecurityGroups",
+                "ec2:RunInstances",
+                "ec2:DescribeTags",
+                "ec2:DescribeVolumes",
+                "ec2:ImportInstance",
+                "ec2:ImportVolume",
+                "ec2:DeleteVolume",
+                "ec2:DeregisterImage",
+                "ec2:StartInstances",
+                "ec2:StopInstances",
+                "ec2:TerminateInstances",
+                "ec2:ImportImage",
+                "ec2:ImportSnapshot",
+                "ec2:DescribeImportImageTasks",
+                "ec2:DescribeImportSnapshotTasks",
+                "ec2:CancelImportTask",
+                "ec2:DescribeVpcs",
+                "ec2:DescribeSubnets",
+                "ec2:DeleteSnapshot"
+              ],
+              "Resource": "*"
+            }
+          ]
+        },
+        "Users": [ { "Ref" : "UserAccountName" } ]
+      }
+    }
+  },
+
+  "Outputs": {
+    "CloudOnUserAccessKey" : {
+      "Condition": "CreateUserAccount",
+      "Description": "Access Key for the new CloudOn user (if applicable)",
+      "Value" : { "Fn::GetAtt" : [ "CloudOnUserKeys", "SecretAccessKey" ] }
+    },
+    "CloudOnUserSecretKey" : {
+      "Condition": "CreateUserAccount",
+      "Description": "Secret Key for the new CloudOn user (if applicable)",
+      "Value" : { "Ref" : "CloudOnUserKeys" }
+    },
+    "SecurityGroupId" : {
+      "Description": "ID for the newly created Security Group",
+      "Value" : { "Fn::GetAtt" : [ "CloudOnSecurityGroup", "GroupId" ]}
+    }
+  }
+}
