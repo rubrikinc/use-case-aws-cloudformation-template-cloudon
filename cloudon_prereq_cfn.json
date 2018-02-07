@@ -75,6 +75,7 @@
     "CloudOutS3Bucket" : {
       "Type": "AWS::S3::Bucket",
       "Condition" : "CreateBucket",
+      "DeletionPolicy" : "Retain",
       "Properties" : {
         "BucketName" : { "Ref" : "S3BucketName" }
       }
@@ -358,12 +359,12 @@
     "CloudOnUserAccessKey" : {
       "Condition": "CreateUserAccount",
       "Description": "Access Key for the new CloudOn user (if applicable)",
-      "Value" : { "Fn::GetAtt" : [ "CloudOnUserKeys", "SecretAccessKey" ] }
+      "Value" : { "Ref" : "CloudOnUserKeys" }
     },
     "CloudOnUserSecretKey" : {
       "Condition": "CreateUserAccount",
       "Description": "Secret Key for the new CloudOn user (if applicable)",
-      "Value" : { "Ref" : "CloudOnUserKeys" }
+      "Value" : { "Fn::GetAtt" : [ "CloudOnUserKeys", "SecretAccessKey" ] }
     },
     "SecurityGroupId" : {
       "Description": "ID for the newly created Security Group",
