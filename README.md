@@ -10,6 +10,9 @@ Amazon S3 Template URL
 
 ![Select Template](https://user-images.githubusercontent.com/8610203/39970416-9d6bd71a-56b0-11e8-8a58-7832875180a8.png)
 
+CloudFormation Stack Interface
+------------------
+
 ![CloudFormation Screenshot](https://user-images.githubusercontent.com/8610203/39969410-c618e92e-56a0-11e8-9513-c34c1dae2227.png)
 
 Variables
