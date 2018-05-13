@@ -2,6 +2,14 @@
 
 Complete the AWS configuration process required for the Rubrik CloudOn feature which provides the ability to convert a snapshot, an archived snapshot, or a replica into an Amazon Machine Image (AMI) and then run that AMI on an Amazon virtual private cloud (VPC).
 
+Amazon S3 Template URL
+------------------
+[https://s3-us-west-1.amazonaws.com/cloudformation-templates-rubrik-prod/rubrik_cloudon.template
+](https://s3-us-west-1.amazonaws.com/cloudformation-templates-rubrik-prod/rubrik_cloudon.template
+)
+
+![Select Template](https://user-images.githubusercontent.com/8610203/39970416-9d6bd71a-56b0-11e8-8a58-7832875180a8.png)
+
 ![CloudFormation Screenshot](https://user-images.githubusercontent.com/8610203/39969410-c618e92e-56a0-11e8-9513-c34c1dae2227.png)
 
 Variables
