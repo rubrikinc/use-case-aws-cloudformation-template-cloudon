@@ -41,6 +41,14 @@ Default names and descriptions for the various IAM Users, Policies, and Security
 | UserPolicyName |rubrik-cloudon |S3 Security policy used for Rubrik CloudOn.|
 | VMImportPolicyName | rubrik-vmimport-role | Name of Rubrik CloudOn specific policy for the VM Import Role. |
 
+Output
+------------------
+
+| Variable | Description |
+|---|---|
+| IAMUserAccessKey | Access Key for the new IAM User.  (if applicable) |
+| IAMUserSecretKey | Secret Key for the new IAM user.  (if applicable) |
+| SecurityGroupId | ID for the newly created Security Group |
 
 Author Information
 ------------------
