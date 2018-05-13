@@ -21,10 +21,10 @@
                 "Parameters": [ "SecurityGroupName", "SecurityGroupDescription", "SecurityGroupRoleDescription", "UserPolicyName", "VMImportPolicyName" ]
               }
             ]
-
           }
 
     },
+
     "Parameters": {
     
         "CreateS3NewBucket": {
@@ -62,7 +62,7 @@
         },
 
         "CreateNewUser" : {
-            "Description": "Create a new IAM user specific to Rubrik CloudOn",
+            "Description": "Create a new IAM user specific to Rubrik CloudOn.",
             "Type": "String",
             "Default": "yes",
             "AllowedValues": [ "yes", "no" ],
@@ -105,14 +105,12 @@
             "Default": "rubrik-vmimport-role"
         }
 
-        
-        
-            
-    
     },
+
     "Mappings": {
 
     },
+
     "Conditions": {
         "CreateBucket" : { "Fn::Equals" : [ {"Ref" : "CreateS3NewBucket"}, "yes" ] },
         "CreateVMImport" : { "Fn::Equals" : [ {"Ref" : "CreateVMImportRole"}, "yes" ] },
@@ -120,10 +118,8 @@
         "CreateIAMuser" : { "Fn::Equals" : [ {"Ref" : "CreateNewUser"}, "yes" ] },
         "DontCreateIAMuser" : { "Fn::Equals" : [ {"Ref" : "CreateNewUser"}, "no" ] }
 
-
-
-
     },
+
     "Resources": {
         "CreateS3Bucket": {
             "Type": "AWS::S3::Bucket",
