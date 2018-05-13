@@ -425,7 +425,7 @@
           "Description": "Access Key for the new IAM User.",
           "Value" : { "Ref" : "IAMUserAccessKeys" }
         },
-        "CloudOnUserSecretKey" : {
+        "IAMUserSecretKey" : {
           "Condition": "CreateIAMuser",
           "Description": "Secret Key for the new IAM user.",
           "Value" : { "Fn::GetAtt" : [ "IAMUserAccessKeys", "SecretAccessKey" ] }
