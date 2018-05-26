@@ -62,11 +62,11 @@
         },
 
         "CreateNewUser" : {
-            "Description": "Create a new IAM user specific to Rubrik CloudOn.",
+            "Description": "Create a new IAM user specific to Rubrik",
             "Type": "String",
             "Default": "yes",
             "AllowedValues": [ "yes", "no" ],
-            "ConstraintDescription"	: "Choose 'yes' to create a new IAM User specific to Rubrk CloudOn or 'no' to use an existing IAM User."
+            "ConstraintDescription"	: "Choose 'yes' to create a new IAM User specific to Rubrk or 'no' to use an existing IAM User."
           },
 
         "IAMUserName" : {
