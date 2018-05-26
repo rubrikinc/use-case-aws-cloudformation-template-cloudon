@@ -14,7 +14,7 @@
               },
               {
                 "Label": { "default" : "IAM Users and Roles" },
-                "Parameters": [ "IAMUserName", "CreateNewUser", "CreateVMImportRole" ]
+                "Parameters": [ "CreateNewUser", "CreateVMImportRole", "IAMUserName" ]
               },
               {
                 "Label": { "default" : "Optional" },
