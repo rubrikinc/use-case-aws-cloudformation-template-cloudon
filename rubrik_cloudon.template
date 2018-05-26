@@ -72,7 +72,7 @@
         "IAMUserName" : {
             "Description": "The name of the IAM User to assign the new CloudOn specific policies to.",
             "Type": "String",
-            "Default": "rubrik-cloudon"
+            "Default": "rubrik"
         },
 
         "SecurityGroupName": {
