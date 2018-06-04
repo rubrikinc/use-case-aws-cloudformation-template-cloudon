@@ -433,6 +433,10 @@
         "SecurityGroupId" : {
           "Description": "ID for the newly created Security Group",
           "Value" : { "Fn::GetAtt" : [ "CreateSecurityGroup", "GroupId" ]}
-        }
+        },
+        "VPCId" : {
+            "Description": "VPC ID where the Rubrik Bolt Instance is created.",
+            "Value" : { "Ref" : "VPC" }
+          }
       }
 }
