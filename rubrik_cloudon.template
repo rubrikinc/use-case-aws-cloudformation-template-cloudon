@@ -318,7 +318,9 @@
                             "ec2:CancelImportTask",
                             "ec2:DescribeVpcs",
                             "ec2:DescribeSubnets",
-                            "ec2:DeleteSnapshot"
+                            "ec2:DeleteSnapshot",
+                            "ec2:modifyInstanceAttribute",
+                            "ec2:describeAccountAttributes"
                         ],
                         "Resource": "*"
                     },
@@ -388,7 +390,9 @@
                             "ec2:CancelImportTask",
                             "ec2:DescribeVpcs",
                             "ec2:DescribeSubnets",
-                            "ec2:DeleteSnapshot"
+                            "ec2:DeleteSnapshot",
+                            "ec2:modifyInstanceAttribute",
+                            "ec2:describeAccountAttributes"
                         ],
                         "Resource": "*"
                     },
@@ -433,6 +437,10 @@
         "SecurityGroupId" : {
           "Description": "ID for the newly created Security Group",
           "Value" : { "Fn::GetAtt" : [ "CreateSecurityGroup", "GroupId" ]}
-        }
+        },
+        "VPCId" : {
+            "Description": "VPC ID where the Rubrik Bolt Instance is created.",
+            "Value" : { "Ref" : "VPC" }
+          }
       }
 }

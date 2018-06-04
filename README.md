@@ -60,6 +60,9 @@ Output
 | IAMUserAccessKey | Access Key for the new IAM User.  (if applicable) |
 | IAMUserSecretKey | Secret Key for the new IAM user.  (if applicable) |
 | SecurityGroupId | ID for the newly created Security Group |
+| VPCId | VPC ID where the Rubrik Bolt Instance is created. |
+
+
 
 Author Information
 ------------------
