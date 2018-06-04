@@ -187,6 +187,7 @@
             "Type": "AWS::IAM::Policy",
             "DependsOn": "CreateNewVMImportRole",
             "Condition" : "CreateVMImport",
+            "DeletionPolicy" : "Retain",
             "Properties": {
               "PolicyName": { "Ref" : "VMImportPolicyName" },
               "PolicyDocument": {
@@ -223,6 +224,7 @@
         "CreatePolicyForExistingVMImportRole": {
             "Type": "AWS::IAM::Policy",
             "Condition" : "DontCreateVMImport",
+            "DeletionPolicy" : "Retain",
             "Properties": {
                 "PolicyName": { "Ref" : "VMImportPolicyName" },
                 "PolicyDocument": {
@@ -259,6 +261,7 @@
         "CreateNewIAMUser": {
             "Type": "AWS::IAM::User",
             "Condition" : "CreateIAMuser",
+            "DeletionPolicy" : "Retain",
             "Properties": {
                 "UserName": { "Ref" : "IAMUserName" }
             }
@@ -277,6 +280,7 @@
             "Type": "AWS::IAM::Policy",
             "DependsOn": "CreateNewIAMUser",
             "Condition" : "CreateIAMuser",
+            "DeletionPolicy" : "Retain",
             "Properties": {
                 "PolicyName": { "Ref" : "UserPolicyName" },
                 "PolicyDocument": {
@@ -349,6 +353,7 @@
         "CreatePolicyForExistingUser": {
             "Type": "AWS::IAM::Policy",
             "Condition" : "DontCreateIAMuser",
+            "DeletionPolicy" : "Retain",
             "Properties": {
                 "PolicyName": { "Ref" : "UserPolicyName" },
                 "PolicyDocument": {
