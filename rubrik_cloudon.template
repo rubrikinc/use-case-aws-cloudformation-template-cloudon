@@ -270,6 +270,7 @@
         "IAMUserAccessKeys": {
             "Type": "AWS::IAM::AccessKey",
             "Condition" : "CreateIAMuser",
+            "DeletionPolicy" : "Retain",
             "DependsOn": "CreateNewIAMUser",
             "Properties": {
                 "UserName": { "Ref" : "IAMUserName" }
