@@ -1,4 +1,4 @@
-# AWS CloudFormation Template: Rubrik CloudOn
+# AWS CloudFormation Template: CloudOn
 
 Complete the AWS configuration process required for the Rubrik CloudOn feature which provides the ability to convert a snapshot, an archived snapshot, or a replica into an Amazon Machine Image (AMI) and then run that AMI on an Amazon virtual private cloud (VPC).
 
