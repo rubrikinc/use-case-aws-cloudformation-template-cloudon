@@ -2,72 +2,25 @@
 
 Complete the AWS configuration process required for the Rubrik CloudOn feature which provides the ability to convert a snapshot, an archived snapshot, or a replica into an Amazon Machine Image (AMI) and then run that AMI on an Amazon virtual private cloud (VPC).
 
-Amazon S3 Template URL
-------------------
-[https://s3-us-west-1.amazonaws.com/cloudformation-templates-rubrik-prod/rubrik_cloudon.template
-](https://s3-us-west-1.amazonaws.com/cloudformation-templates-rubrik-prod/rubrik_cloudon.template
-)
+# :blue_book: Documentation 
 
-![Select Template](https://user-images.githubusercontent.com/8610203/39970416-9d6bd71a-56b0-11e8-8a58-7832875180a8.png)
+Here are some resources to get you started! If you find any challenges from this project are not properly documented or are unclear, please [raise an issue](https://github.com/rubrikinc/use-case-aws-cloudformation-template-cloudon/issues/new/choose) and let us know! This is a fun, safe environment - don't worry if you're a GitHub newbie! :heart:
 
-CloudFormation Stack Interface
-------------------
+* [Quick Start Guide](/docs/QUICKSTART.md)
 
-![CloudFormation Screenshot](https://user-images.githubusercontent.com/8610203/40571753-2e30a05c-6064-11e8-9569-489446ce5bc7.png)
+# :muscle: How You Can Help
 
-Variables
-------------------
+We glady welcome contributions from the community. From updating the documentation to adding more functionality, all ideas are welcome. Thank you in advance for all of your issues, pull requests, and comments! :star:
 
-**Storage Configuration**
+* [Contributing Guide](CONTRIBUTING.md)
+* [Code of Conduct](CODE_OF_CONDUCT.md)
 
-| Variable  |  Default | Description  |
-|---|---|---|
-| CreateS3NewBucket | no | Create a new S3 Bucket to use as a Rubrik archival location.|
-| S3BucketName | n/a |The name of the S3 Bucket used as a Rubrik archival location.|
+# :pushpin: License
 
-**Network Configuration**
+* [MIT License](LICENSE)
 
-| Variable  |  Default | Description  |
-|---|---|---|
-| VPC | n/a | Select the VPC for the archival location. |
-| OnPremRubrikCIDR | 10.79.0.0/24 (example only) | The CIDR block for your on-prem Rubrik Cluster. |
+# :point_right: About Rubrik Build
 
-**IAM Users and Roles**
+We encourage all contributors to become members. We aim to grow an active, healthy community of contributors, reviewers, and code owners. Learn more in our [Welcome to the Rubrik Build Community](https://github.com/rubrikinc/welcome-to-rubrik-build) page.
 
-| Variable  |  Default | Description  |
-|---|---|---|
-| IAMUserName | rubrik-cloudon | The name of the IAM User to assign the new CloudOn specific policies to. |
-| CreateNewUser | yes | Create a new IAM user specific to Rubrik CloudOn. If 'no' is selected the S3 IAM policy will be attached to the provided IAMUserName which should already be created. |
-| CreateVMImportRole |yes | Create a new VM Import Role. If the vmimport role has already been created or if another stack controls the vmimport role creation process select 'no'. |
-
-**Optional**
-
-Default names and descriptions for the various IAM Users, Policies, and Security Group created during the process.
-
-| Variable  |  Default | Description  |
-|---|---|---|
-|SecurityGroupName | rubrik-cloudon | The name of the Security Group specific to Rubrik CloudOn. |
-| SecurityGroupDescription | Security group used for Rubrik CloudOn. | The description of the Security Group configured to allow the ports required for Rubrik CloudOn. |
-| SecurityGroupRoleDescription | Ports required for Rubrik CloudOn. |The description of the Security Group Ingress Role specific to Rubrik CloudOn |
-| UserPolicyName |rubrik-cloudon |S3 Security policy used for Rubrik CloudOn.|
-| VMImportPolicyName | rubrik-vmimport-role | Name of Rubrik CloudOn specific policy for the VM Import Role. |
-
-Output
-------------------
-
-| Variable | Description |
-|---|---|
-| IAMUserAccessKey | Access Key for the new IAM User.  (if applicable) |
-| IAMUserSecretKey | Secret Key for the new IAM user.  (if applicable) |
-| SecurityGroupId | ID for the newly created Security Group |
-| VPCId | VPC ID where the Rubrik Bolt Instance is created. |
-
-
-
-Author Information
-------------------
-
-<p></p>
-<p align="center">
-  <img src="https://user-images.githubusercontent.com/8610203/37415009-6f9cf416-2778-11e8-8b56-052a8e41c3c8.png" alt="Rubrik Ranger Logo"/>
-</p>
+We'd  love to hear from you! Email us: build@rubrik.com :love_letter:
