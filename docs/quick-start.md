@@ -10,6 +10,10 @@ The end-to-end workflow is as follows:
 
 ![Template Design](/docs/img/rubrik_cloudout-designer.png)
 
+This is automated as a part of the CloudFormation template, however, permission templates can be found in this repo.:
+
+* [s3_security_policy.json`](/s3_security_policy.json)
+* [`vmimport.json`](/vmimport.json)
 
 # CloudFormation Stack
 
@@ -42,7 +46,6 @@ Go to the Rubrik UI, select the configuration cog, and choose **Archival Locatio
 ![Add Archival Location](/docs/img/image4.png)
 
 Follow the Rubrik CDM User Guide to complete the setup. 
-
 
 # Variables
 
