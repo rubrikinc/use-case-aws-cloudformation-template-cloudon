@@ -18,8 +18,6 @@ This is automated as a part of the CloudFormation template, however, permission 
 
 # CloudFormation Stack
 
-![CloudFormation Screenshot](https://user-images.githubusercontent.com/8610203/40571753-2e30a05c-6064-11e8-9569-489446ce5bc7.png)
-
 Navigate to **Services** > **CloudFormation** > **Stacks** and select **Create Stack**. 
 
 ![Create a Stack](/docs/img/image1.png)
