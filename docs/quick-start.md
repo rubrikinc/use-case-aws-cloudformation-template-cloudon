@@ -8,7 +8,7 @@ The end-to-end workflow is as follows:
 * 
 * 
 
-![Template Design](/docs/img/rubrik_cloudout-designer.png)
+#![Template Design](/docs/img/rubrik_cloudout-designer.png)
 
 This is automated as a part of the CloudFormation template, however, permission templates can be found in this repo.:
 
@@ -21,11 +21,11 @@ This is automated as a part of the CloudFormation template, however, permission 
 
 Navigate to **Services** > **CloudFormation** > **Stacks** and select **Create Stack**. 
 
-![Create a Stack](/docs/img/image1.png)
+#![Create a Stack](/docs/img/image1.png)
 
 Either select **Upload a template to Amazon S3** or, preferably, **Specify an Amazon S3 template URL**. 
 
-![Select Template](/docs/img/image2.png)
+#![Select Template](/docs/img/image2.png)
 
 The template file can be downloaded [here](https://s3-us-west-1.amazonaws.com/cloudformation-templates-rubrik-prod/rubrik_cloudon.template). Copy the following URL:
 
@@ -35,15 +35,11 @@ https://s3-us-west-1.amazonaws.com/cloudformation-templates-rubrik-prod/rubrik_c
 
 On the **Specify Details** page, enter the **Stack name** and the **S3BucketName**. 
 
-![Specify Details](/docs/img/image3.png)
+#![Specify Details](/docs/img/image3.png)
 
 Press **Next** through the **Options** page. 
 
 Use the **Review** page to ensure all the information is correct. Press **Create** once reviewed.
-
-Go to the Rubrik UI, select the configuration cog, and choose **Archival Locations**. Select the plus (**+**) sign to add a new archival location. 
-
-![Add Archival Location](/docs/img/image4.png)
 
 Follow the Rubrik CDM User Guide to complete the setup. 
 
