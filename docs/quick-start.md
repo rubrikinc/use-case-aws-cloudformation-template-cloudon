@@ -40,8 +40,6 @@ Press **Next** through the **Options** page.
 
 Use the **Review** page to ensure all the information is correct. Press **Create** once reviewed.
 
-![Add Archival Location](/docs/img/image4.png)
-
 Follow the Rubrik CDM User Guide to complete the setup. 
 
 # Variables
