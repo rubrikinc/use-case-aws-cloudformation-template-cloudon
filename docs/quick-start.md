@@ -9,7 +9,7 @@ The end-to-end workflow is as follows:
 * Security Group Creation
 * Create S3 Bucket
 
-#![Template Design](/docs/img/rubrik-cloudon-designer.png)
+![Template Design](/docs/img/rubrik-cloudon-designer.png)
 
 This is automated as a part of the CloudFormation template, however, permission templates can be found in this repo.:
 
