@@ -4,20 +4,19 @@ Complete the AWS configuration process required for the Rubrik CloudOn feature w
 
 The end-to-end workflow is as follows:
 
-* 
-* 
-* 
+* Create Policies
+* Create IAM User, Role, and Access Key
+* Create Security Group
+* Create S3 Bucket
 
-![Template Design](/docs/img/rubrik_cloudout-designer.png)
+![Template Design](/docs/img/rubrik-cloudon-designer.png)
 
-This is automated as a part of the CloudFormation template, however, permission templates can be found in this repo.:
+This is automated as a part of the CloudFormation template, however, permission templates can be found in this repo:
 
-* [s3_security_policy.json`](/s3_security_policy.json)
+* [`s3_security_policy.json`](/s3_security_policy.json)
 * [`vmimport.json`](/vmimport.json)
 
 # CloudFormation Stack
-
-![CloudFormation Screenshot](https://user-images.githubusercontent.com/8610203/40571753-2e30a05c-6064-11e8-9569-489446ce5bc7.png)
 
 Navigate to **Services** > **CloudFormation** > **Stacks** and select **Create Stack**. 
 
@@ -40,10 +39,6 @@ On the **Specify Details** page, enter the **Stack name** and the **S3BucketName
 Press **Next** through the **Options** page. 
 
 Use the **Review** page to ensure all the information is correct. Press **Create** once reviewed.
-
-Go to the Rubrik UI, select the configuration cog, and choose **Archival Locations**. Select the plus (**+**) sign to add a new archival location. 
-
-![Add Archival Location](/docs/img/image4.png)
 
 Follow the Rubrik CDM User Guide to complete the setup. 
 
