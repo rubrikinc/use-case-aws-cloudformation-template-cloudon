@@ -13,7 +13,7 @@ Here are some resources to get you started! If you find any challenges from this
 There are a few services you'll need in order to get this project off the ground:
 
 * AWS CloudFormation - this service allows you to configure CloudOut via a template
-* [Template for CloudOut to S3](rubrik_cloudout.template) - template for configuring CloudOut to S3
+* [Template for CloudOut to S3](rubrik_cloudon.template) - template for configuring CloudOut to S3
 * Rubrik CDM 4.0+ - the platform that protects provisioned workloads
 
 # :muscle: How You Can Help
