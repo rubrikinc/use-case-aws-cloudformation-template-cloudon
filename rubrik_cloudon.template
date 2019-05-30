@@ -58,7 +58,7 @@
             "Type": "String",
             "Default": "yes",
             "AllowedValues": [ "yes", "no" ],
-            "ConstraintDescription": "Choose 'yes' to create a new VM Import Role or 'no' if the role already exsits."
+            "ConstraintDescription": "Choose 'yes' to create a new VM Import Role or 'no' if the role already exists."
         },
 
         "CreateNewUser" : {
@@ -66,7 +66,7 @@
             "Type": "String",
             "Default": "yes",
             "AllowedValues": [ "yes", "no" ],
-            "ConstraintDescription"	: "Choose 'yes' to create a new IAM User specific to Rubrk or 'no' to use an existing IAM User."
+            "ConstraintDescription"	: "Choose 'yes' to create a new IAM User specific to Rubrik or 'no' to use an existing IAM User."
           },
 
         "IAMUserName" : {
@@ -92,13 +92,6 @@
             "Type": "String",
             "Default": "Ports required for Rubrik CloudOn."
         },
-
-        "UserPolicyName": {
-            "Description": "S3 Security policy used for Rubrik CloudOn.",
-            "Type": "String",
-            "Default": "rubrik-cloudon"
-        },
-
         "VMImportPolicyName": {
             "Description": "Name of Rubrik CloudOn specific policy for the VM Import Role.",
             "Type": "String",
@@ -149,16 +142,28 @@
                 },
                 {
                   "IpProtocol" : "tcp",
-                  "FromPort" : "7780",
-                  "ToPort" : "7780",
+                  "FromPort" : "8077",
+                  "ToPort" : "8077",
                   "CidrIp" : { "Ref" : "OnPremRubrikCIDR" },
-                  "Description": { "Ref" : "SecurityGroupRoleDescription" }
+                  "Description" : { "Ref" : "SecurityGroupRoleDescription" }
                 }
               ],
               "VpcId" : { "Ref" : "VPC" }
             }
           },
-        
+          "UpdateSecurityGroupForConverter" : {
+            "Type" : "AWS::EC2::SecurityGroupIngress",
+            "DeletionPolicy" : "Retain",
+            "Properties" : {
+              "GroupId" : { "Fn::GetAtt" : [ "CreateSecurityGroup", "GroupId" ] },
+              "Description" : { "Ref" : "SecurityGroupRoleDescription" },
+              "IpProtocol" : "tcp",
+              "FromPort" : "7785",
+              "ToPort" : "7785",
+              "SourceSecurityGroupId" : { "Fn::GetAtt" : [ "CreateSecurityGroup", "GroupId" ] }
+            }
+          },
+          
         "CreateNewVMImportRole": {
             "Type": "AWS::IAM::Role",
             "Condition" : "CreateVMImport",
@@ -277,156 +282,237 @@
             }
         },
 
-        "CreatePolicyForNewUser": {
+        "CreateCloudOutPolicyForNewUser": {
             "Type": "AWS::IAM::Policy",
             "DependsOn": "CreateNewIAMUser",
             "Condition" : "CreateIAMuser",
             "DeletionPolicy" : "Retain",
             "Properties": {
-                "PolicyName": { "Ref" : "UserPolicyName" },
+                "PolicyName": "Rubrik-CloudOut",
                 "PolicyDocument": {
-                "Version": "2012-10-17",
-                "Statement": [
-                    {
-                        "Effect": "Allow",
-                        "Action": [
-                            "s3:ListAllMyBuckets",
-                            "iam:CreateRole",
-                            "iam:PutRolePolicy",
-                            "ec2:CancelConversionTask",
-                            "ec2:CancelExportTask",
-                            "ec2:CreateImage",
-                            "ec2:CreateInstanceExportTask",
-                            "ec2:CreateTags",
-                            "ec2:DeleteTags",
-                            "ec2:DescribeConversionTasks",
-                            "ec2:DescribeExportTasks",
-                            "ec2:DescribeInstanceAttribute",
-                            "ec2:DescribeInstanceStatus",
-                            "ec2:DescribeInstances",
-                            "ec2:DescribeImages",
-                            "ec2:DescribeSecurityGroups",
-                            "ec2:RunInstances",
-                            "ec2:DescribeTags",
-                            "ec2:DescribeVolumes",
-                            "ec2:ImportInstance",
-                            "ec2:ImportVolume",
-                            "ec2:DeleteVolume",
-                            "ec2:DeregisterImage",
-                            "ec2:StartInstances",
-                            "ec2:StopInstances",
-                            "ec2:TerminateInstances",
-                            "ec2:ImportImage",
-                            "ec2:ImportSnapshot",
-                            "ec2:DescribeImportImageTasks",
-                            "ec2:DescribeImportSnapshotTasks",
-                            "ec2:CancelImportTask",
-                            "ec2:DescribeVpcs",
-                            "ec2:DescribeSubnets",
-                            "ec2:DeleteSnapshot",
-                            "ec2:modifyInstanceAttribute",
-                            "ec2:describeAccountAttributes"
-                        ],
-                        "Resource": "*"
-                    },
-                    {
-                        "Effect": "Allow",
-                        "Action": [
-                            "s3:PutObject",
-                            "s3:GetObject",
-                            "s3:CreateBucket",
-                            "s3:ListBucket",
-                            "s3:DeleteObject",
-                            "s3:GetBucketLocation",
-                            "s3:DeleteBucket"
-                        ],
-                        "Resource": [
-                            { "Fn::Join" : [ "", [ "arn:aws:s3:::", { "Ref": "S3BucketName" } ] ] },
-                            { "Fn::Join" : [ "", [ "arn:aws:s3:::", { "Ref": "S3BucketName" }, "/*" ] ] }
-                        ]
-                    }
-                ]
+                    "Version": "2012-10-17",
+                    "Statement": [
+                        {
+                            "Sid": "RubrikCloudOutGlobal",
+                            "Effect": "Allow",
+                            "Action": [
+                                "s3:ListAllMyBuckets"
+                            ],
+                            "Resource": "*"
+                        },
+                        {
+                            "Sid": "RubrikCloudOutRestricted",
+                            "Effect": "Allow",
+                            "Action": [
+                                "s3:AbortMultipartUpload",
+                                "s3:CreateBucket",
+                                "s3:DeleteObject",
+                                "s3:DeleteBucket",
+                                "s3:GetBucketLocation",
+                                "s3:ListBucket",
+                                "s3:ListMultipartUploadParts",
+                                "s3:PutObject",
+                                "s3:RestoreObject",
+                                "s3:GetObject"
+                            ],
+                            "Resource": [
+                                { "Fn::Join" : [ "", [ "arn:aws:s3:::", { "Ref": "S3BucketName" } ] ] },
+                                { "Fn::Join" : [ "", [ "arn:aws:s3:::", { "Ref": "S3BucketName" }, "/*" ] ] }
+                            ]
+                        }
+                    ]
                 },
                 "Users": [ { "Ref" : "IAMUserName" } ]
             }
         },
-
-        "CreatePolicyForExistingUser": {
+        "CreateCloudOnPolicyForNewUser": {
+            "Type": "AWS::IAM::Policy",
+            "DependsOn": "CreateNewIAMUser",
+            "Condition" : "CreateIAMuser",
+            "DeletionPolicy" : "Retain",
+            "Properties": {
+                "PolicyName": "Rubrik-CloudOn",
+                "PolicyDocument": {
+                    "Version": "2012-10-17",
+                    "Statement": [
+                        {
+                            "Sid": "RubrikCloudOnV50",
+                            "Effect": "Allow",
+                            "Action": [
+                                "ec2:DescribeInstances",
+                                "ec2:CreateKeyPair",
+                                "ec2:CreateImage",
+                                "iam:CreateRole",           
+                                "ec2:CopyImage",
+                                "iam:PutRolePolicy",
+                                "ec2:DescribeSnapshots",
+                                "ec2:DeleteVolume",
+                                "ec2:StartInstances",
+                                "ec2:DescribeVolumes",
+                                "ec2:DescribeExportTasks",
+                                "ec2:DescribeAccountAttributes",
+                                "ec2:ImportImage",
+                                "ec2:DescribeKeyPairs",
+                                "ec2:DetachVolume",
+                                "ec2:CancelExportTask",
+                                "ec2:CreateTags",
+                                "ec2:RunInstances",
+                                "ec2:StopInstances",
+                                "ec2:CreateVolume",
+                                "ec2:DescribeImportSnapshotTasks",
+                                "ec2:DescribeSubnets",
+                                "ec2:AttachVolume",
+                                "ec2:DeregisterImage",
+                                "ec2:ImportVolume",
+                                "ec2:DeleteSnapshot",
+                                "ec2:DeleteTags",
+                                "ec2:DescribeInstanceAttribute",
+                                "ec2:DescribeAvailabilityZones",
+                                "ec2:CreateSnapshot",
+                                "ec2:ModifyInstanceAttribute",
+                                "ec2:DescribeInstanceStatus",
+                                "ec2:CreateInstanceExportTask",
+                                "ec2:TerminateInstances",
+                                "ec2:ImportInstance",
+                                "s3:CreateBucket",
+                                "s3:ListAllMyBuckets",
+                                "ec2:DescribeTags",
+                                "ec2:CancelConversionTask",
+                                "ec2:ImportSnapshot",
+                                "ec2:DescribeImportImageTasks",
+                                "ec2:DescribeSecurityGroups",
+                                "ec2:DescribeImages",
+                                "ec2:DescribeVpcs",
+                                "ec2:CancelImportTask",
+                                "ec2:DescribeConversionTasks",
+                                "kms:Encrypt",
+                                "kms:Decrypt",
+                                "kms:DescribeKey",
+                                "kms:GenerateDataKeyWithoutPlaintext",
+                                "kms:GenerateDataKey"
+                            ],
+                            "Resource": "*"
+                        }
+                    ]
+                },
+                "Users": [ { "Ref" : "IAMUserName" } ]
+            }
+        },
+        "CreateCloudOutPolicyForExistingUser": {
             "Type": "AWS::IAM::Policy",
             "Condition" : "DontCreateIAMuser",
             "DeletionPolicy" : "Retain",
             "Properties": {
-                "PolicyName": { "Ref" : "UserPolicyName" },
+                "PolicyName": "RubrikCloudOut",
                 "PolicyDocument": {
-                "Version": "2012-10-17",
-                "Statement": [
-                    {
-                        "Effect": "Allow",
-                        "Action": [
-                            "s3:ListAllMyBuckets",
-                            "iam:CreateRole",
-                            "iam:PutRolePolicy",
-                            "ec2:CancelConversionTask",
-                            "ec2:CancelExportTask",
-                            "ec2:CreateImage",
-                            "ec2:CreateInstanceExportTask",
-                            "ec2:CreateTags",
-                            "ec2:DeleteTags",
-                            "ec2:DescribeConversionTasks",
-                            "ec2:DescribeExportTasks",
-                            "ec2:DescribeInstanceAttribute",
-                            "ec2:DescribeInstanceStatus",
-                            "ec2:DescribeInstances",
-                            "ec2:DescribeImages",
-                            "ec2:DescribeSecurityGroups",
-                            "ec2:RunInstances",
-                            "ec2:DescribeTags",
-                            "ec2:DescribeVolumes",
-                            "ec2:ImportInstance",
-                            "ec2:ImportVolume",
-                            "ec2:DeleteVolume",
-                            "ec2:DeregisterImage",
-                            "ec2:StartInstances",
-                            "ec2:StopInstances",
-                            "ec2:TerminateInstances",
-                            "ec2:ImportImage",
-                            "ec2:ImportSnapshot",
-                            "ec2:DescribeImportImageTasks",
-                            "ec2:DescribeImportSnapshotTasks",
-                            "ec2:CancelImportTask",
-                            "ec2:DescribeVpcs",
-                            "ec2:DescribeSubnets",
-                            "ec2:DeleteSnapshot",
-                            "ec2:modifyInstanceAttribute",
-                            "ec2:describeAccountAttributes"
-                        ],
-                        "Resource": "*"
-                    },
-                    {
-                        "Effect": "Allow",
-                        "Action": [
-                            "s3:PutObject",
-                            "s3:GetObject",
-                            "s3:CreateBucket",
-                            "s3:ListBucket",
-                            "s3:DeleteObject",
-                            "s3:GetBucketLocation",
-                            "s3:DeleteBucket"
-                        ],
-                        "Resource": [
-                            { "Fn::Join" : [ "", [ "arn:aws:s3:::", { "Ref": "S3BucketName" } ] ] },
-                            { "Fn::Join" : [ "", [ "arn:aws:s3:::", { "Ref": "S3BucketName" }, "/*" ] ] }
-                        ]
-                    }
-                ]
+                    "Version": "2012-10-17",
+                    "Statement": [
+                        {
+                            "Sid": "RubrikCloudOutGlobal",
+                            "Effect": "Allow",
+                            "Action": [
+                                "s3:ListAllMyBuckets"
+                            ],
+                            "Resource": "*"
+                        },
+                        {
+                            "Sid": "RubrikCloudOutRestricted",  
+                            "Effect": "Allow",
+                            "Action": [
+                                "s3:AbortMultipartUpload",
+                                "s3:CreateBucket",
+                                "s3:DeleteObject",
+                                "s3:DeleteBucket",
+                                "s3:GetBucketLocation",
+                                "s3:ListBucket",
+                                "s3:ListMultipartUploadParts",
+                                "s3:PutObject",
+                                "s3:RestoreObject",
+                                "s3:GetObject"
+                            ],
+                            "Resource": [
+                                { "Fn::Join" : [ "", [ "arn:aws:s3:::", { "Ref": "S3BucketName" } ] ] },
+                                { "Fn::Join" : [ "", [ "arn:aws:s3:::", { "Ref": "S3BucketName" }, "/*" ] ] }
+                            ]
+                        }
+                    ]
+                },
+                "Users": [ { "Ref" : "IAMUserName" } ]
+            }
+        },
+        "CreateCloudOnPolicyForExistingUser": {
+            "Type": "AWS::IAM::Policy",
+            "Condition" : "DontCreateIAMuser",
+            "DeletionPolicy" : "Retain",
+            "Properties": {
+                "PolicyName": "Rubrik-CloudOn",
+                "PolicyDocument": {
+                    "Version": "2012-10-17",
+                    "Statement": [
+                        {
+                            "Sid": "RubrikCloudOnV50",
+                            "Effect": "Allow",
+                            "Action": [
+                                "ec2:DescribeInstances",
+                                "ec2:CreateKeyPair",
+                                "ec2:CreateImage",
+                                "iam:CreateRole",           
+                                "ec2:CopyImage",
+                                "iam:PutRolePolicy",
+                                "ec2:DescribeSnapshots",
+                                "ec2:DeleteVolume",
+                                "ec2:StartInstances",
+                                "ec2:DescribeVolumes",
+                                "ec2:DescribeExportTasks",
+                                "ec2:DescribeAccountAttributes",
+                                "ec2:ImportImage",
+                                "ec2:DescribeKeyPairs",
+                                "ec2:DetachVolume",
+                                "ec2:CancelExportTask",
+                                "ec2:CreateTags",
+                                "ec2:RunInstances",
+                                "ec2:StopInstances",
+                                "ec2:CreateVolume",
+                                "ec2:DescribeImportSnapshotTasks",
+                                "ec2:DescribeSubnets",
+                                "ec2:AttachVolume",
+                                "ec2:DeregisterImage",
+                                "ec2:ImportVolume",
+                                "ec2:DeleteSnapshot",
+                                "ec2:DeleteTags",
+                                "ec2:DescribeInstanceAttribute",
+                                "ec2:DescribeAvailabilityZones",
+                                "ec2:CreateSnapshot",
+                                "ec2:ModifyInstanceAttribute",
+                                "ec2:DescribeInstanceStatus",
+                                "ec2:CreateInstanceExportTask",
+                                "ec2:TerminateInstances",
+                                "ec2:ImportInstance",
+                                "s3:CreateBucket",
+                                "s3:ListAllMyBuckets",
+                                "ec2:DescribeTags",
+                                "ec2:CancelConversionTask",
+                                "ec2:ImportSnapshot",
+                                "ec2:DescribeImportImageTasks",
+                                "ec2:DescribeSecurityGroups",
+                                "ec2:DescribeImages",
+                                "ec2:DescribeVpcs",
+                                "ec2:CancelImportTask",
+                                "ec2:DescribeConversionTasks",
+                                "kms:Encrypt",
+                                "kms:Decrypt",
+                                "kms:DescribeKey",
+                                "kms:GenerateDataKeyWithoutPlaintext",
+                                "kms:GenerateDataKey"
+                            ],
+                            "Resource": "*"
+                        }
+                    ]
                 },
                 "Users": [ { "Ref" : "IAMUserName" } ]
             }
         }
-
-
         
-
     },
     
     "Outputs": {

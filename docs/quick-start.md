@@ -9,42 +9,43 @@ The end-to-end workflow is as follows:
 * Create Security Group
 * Create S3 Bucket
 
-![Template Design](/docs/img/rubrik-cloudon-designer.png)
+![Template Design](img/rubrik-cloudon-designer.png)
 
 This is automated as a part of the CloudFormation template, however, permission templates can be found in this repo:
 
-* [`s3_security_policy.json`](/s3_security_policy.json)
-* [`vmimport.json`](/vmimport.json)
+* [`cloudon_security_policy.json`](../cloudon_security_policy.json)
+* [`cloudout_security_policy.json`](../cloudout_security_policy.json)
+* [`vmimport.json`](../vmimport.json)
 
 # CloudFormation Stack
 
-Navigate to **Services** > **CloudFormation** > **Stacks** and select **Create Stack**. 
+Navigate to **Services** > **CloudFormation** > **Stacks** and select **Create Stack**.
 
-![Create a Stack](/docs/img/image1.png)
+![Create a Stack](img/image1.png)
 
-Either select **Upload a template to Amazon S3** or, preferably, **Specify an Amazon S3 template URL**. 
+Either select **Upload a template to Amazon S3** or, preferably, **Specify an Amazon S3 template URL**.
 
-![Select Template](/docs/img/image2.png)
+![Select Template](img/image2.png)
 
 The template file can be downloaded [here](https://s3-us-west-1.amazonaws.com/cloudformation-templates-rubrik-prod/rubrik_cloudon.template). Copy the following URL:
 
-```
+```url
 https://s3-us-west-1.amazonaws.com/cloudformation-templates-rubrik-prod/rubrik_cloudon.template
 ```
 
-On the **Specify Details** page, enter the **Stack name** and the **S3BucketName**. 
+On the **Specify Details** page, enter the **Stack name** and the **S3BucketName**.
 
-![Specify Details](/docs/img/image3.png)
+![Specify Details](img/image3.png)
 
-Press **Next** through the **Options** page. 
+Press **Next** through the **Options** page.
 
 Use the **Review** page to ensure all the information is correct. Press **Create** once reviewed.
 
-Follow the Rubrik CDM User Guide to complete the setup. 
+Follow the Rubrik CDM User Guide to complete the setup.
 
 # Variables
 
-This section provides information regarding the variables used in the template. 
+This section provides information regarding the variables used in the template.
 
 ## Storage Configuration
 
@@ -77,10 +78,9 @@ Default names and descriptions for the various IAM Users, Policies, and Security
 |SecurityGroupName | rubrik-cloudon | The name of the Security Group specific to Rubrik CloudOn. |
 | SecurityGroupDescription | Security group used for Rubrik CloudOn. | The description of the Security Group configured to allow the ports required for Rubrik CloudOn. |
 | SecurityGroupRoleDescription | Ports required for Rubrik CloudOn. |The description of the Security Group Ingress Role specific to Rubrik CloudOn |
-| UserPolicyName |rubrik-cloudon |S3 Security policy used for Rubrik CloudOn.|
 | VMImportPolicyName | rubrik-vmimport-role | Name of Rubrik CloudOn specific policy for the VM Import Role. |
 
-Output from the CloudFormation template: 
+Output from the CloudFormation template:
 
 | Variable | Description |
 |---|---|
