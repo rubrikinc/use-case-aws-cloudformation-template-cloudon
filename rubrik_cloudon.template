@@ -142,6 +142,13 @@
                 },
                 {
                   "IpProtocol" : "tcp",
+                  "FromPort" : "7785",
+                  "ToPort" : "7785",
+                  "CidrIp" : { "Ref" : "OnPremRubrikCIDR" },
+                  "Description" : { "Ref" : "SecurityGroupRoleDescription" }
+                },
+                {
+                  "IpProtocol" : "tcp",
                   "FromPort" : "8077",
                   "ToPort" : "8077",
                   "CidrIp" : { "Ref" : "OnPremRubrikCIDR" },
