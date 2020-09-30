@@ -1,6 +1,6 @@
 {
 "AWSTemplateFormatVersion": "2010-09-09",
-    "Description": "Complete the AWS configuration process required for the Rubrik CloudOn feature which provides the ability to convert a snapshot, an archived snapshot, or a replica into an Amazon Machine Image (AMI) and then run that AMI on an Amazon virtual private cloud.",
+    "Description": "Complete the AWS configuration process required for the Rubrik CloudOn feature. CloudOn provides the ability to convert a local snapshot, an archived snapshot, or a replica into an Amazon Machine Image (AMI), and then run that AMI on an Amazon virtual private cloud.",
     "Metadata": {
         "AWS::CloudFormation::Interface" : {
             "ParameterGroups" : [
@@ -36,7 +36,7 @@
         },
 
         "S3BucketName": {
-            "Description": "The name of the S3 Bucket used as a Rubrik archival location.",
+            "Description": "The name of the S3 Bucket to be used as a Rubrik archival location.",
             "Type": "String"
         },
 
@@ -48,9 +48,9 @@
         "OnPremRubrikCIDR" : {
             "Type"				: "String",
             "Default"			: "10.79.0.0/24",
-            "Description"			: "The CIDR block for your on-prem Rubrik Cluster.",
+            "Description"			: "The CIDR block for your on-premise Rubrik Cluster.",
             "AllowedPattern"		: "(\\d{1,3})\\.(\\d{1,3})\\.(\\d{1,3})\\.(\\d{1,3})/(\\d{1,2})",
-            "ConstraintDescription"		: "Please enter a valid IP CIDR range in the form x.x.x.x/x."
+            "ConstraintDescription"		: "Enter a valid IP CIDR range in the form x.x.x.x/x."
           },
         
         "CreateVMImportRole": {
@@ -70,11 +70,19 @@
           },
 
         "IAMUserName" : {
-            "Description": "The name of the IAM User to assign the new CloudOn specific policies to.",
+            "Description": "The name of the IAM User to assign the new CloudOn-specific policies to.",
             "Type": "String",
             "Default": "rubrik"
         },
 
+        "UseKMS": {
+            "Description": "Create a new KMS key for encryption.",
+            "Type": "String",
+            "Default": "yes",
+            "AllowedValues": [ "yes", "no" ],
+            "ConstraintDescription": "Choose 'yes' to create a new KMS Key for encryption"
+        },
+      
         "SecurityGroupName": {
             "Description": "The name of the Security Group specific to Rubrik CloudOn.",
             "Type": "String",
@@ -93,7 +101,7 @@
             "Default": "Ports required for Rubrik CloudOn."
         },
         "VMImportPolicyName": {
-            "Description": "Name of Rubrik CloudOn specific policy for the VM Import Role.",
+            "Description": "Name of Rubrik CloudOn-specific policy for the VM Import Role.",
             "Type": "String",
             "Default": "rubrik-vmimport-role"
         }
@@ -519,6 +527,60 @@
                 "Users": [ { "Ref" : "IAMUserName" } ]
             }
         }
+         "CreateKMSKey" : {
+            "Type" : "AWS::KMS::Key",
+            "Condition" : "CreateKMS",
+            "Properties" : {
+                "Description" : "Rubrik archive location encryption",
+                "KeyPolicy" : {
+                    "Version": "2012-10-17",
+                    "Id": { "Fn::Join" : [ "", [ "rubrik-encryption-", { "Ref": "S3BucketName" } ] ] },
+                    "Statement": [
+                         {
+                            "Sid": "Enable IAM User Permissions",
+                            "Effect": "Allow",
+                            "Principal": {
+                                
+                                "AWS": { "Fn::Join" : [ "", [ "arn:aws:iam::", { "Ref": "AWS::AccountId" }, ":root" ] ] }
+                            },
+                            "Action": "kms:*",
+                            "Resource": "*"
+                        },
+                        {
+                            "Sid": "Allow use of the key",
+                            "Effect": "Allow",
+                            "Principal": { "AWS": { 
+                                "Fn::If": ["CreateIAMuser", { 
+                                        "Fn::GetAtt" : [ "CreateNewIAMUser", "Arn" ] 
+                                    }, { 
+                                        "Fn::Join" : [ "", [ "arn:aws:iam::", { "Ref": "AWS::AccountId" }, ":user/", {"Ref" : "IAMUserName"} ] ] 
+                                    } ]
+                                } 
+                            },
+                            "Action": [
+                                "kms:Encrypt",
+                                "kms:Decrypt",
+                                "kms:ReEncrypt*",
+                                "kms:GenerateDataKey*",
+                                "kms:DescribeKey"
+                            ], 
+                            "Resource": "*"
+                        }    
+                    ]
+                }
+            }
+        },
+
+        "KMSKeyAlias" : {
+            "Type" : "AWS::KMS::Alias",
+            "DependsOn" : "CreateKMSKey",
+            "Condition" : "CreateKMS",
+            "Properties" : {
+                "AliasName" : { "Fn::Join" : [ "", [ "alias/rubrik-encryption-", { "Ref": "S3BucketName" } ] ] },
+                "TargetKeyId" : {"Ref":"CreateKMSKey"}
+            }
+    }
+
         
     },
     
@@ -532,6 +594,14 @@
           "Condition": "CreateIAMuser",
           "Description": "Secret Key for the new IAM user.",
           "Value" : { "Fn::GetAtt" : [ "IAMUserAccessKeys", "SecretAccessKey" ] }
+        },
+        "AWSBucketName" : {
+          "Description": "The S3 Bucket name.",
+          "Value" : { "Ref" : "S3BucketName" }
+        },
+        "Region": {
+          "Description": "The AWS Region where the configuration took place.",
+          "Value" : { "Ref" : "AWS::Region" } 
         },
         "SecurityGroupId" : {
           "Description": "ID for the newly created Security Group",
