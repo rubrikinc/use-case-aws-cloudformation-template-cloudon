@@ -18,7 +18,7 @@
               },
               {
                 "Label": { "default" : "Optional" },
-                "Parameters": [ "SecurityGroupName", "SecurityGroupDescription", "SecurityGroupRoleDescription", "UserPolicyName", "VMImportPolicyName" ]
+                "Parameters": [ "SecurityGroupName", "SecurityGroupDescription", "SecurityGroupRoleDescription", "UserPolicyName", "UseKMS", "VMImportPolicyName" ]
               }
             ]
           }
