@@ -117,7 +117,8 @@
         "CreateVMImport" : { "Fn::Equals" : [ {"Ref" : "CreateVMImportRole"}, "yes" ] },
         "DontCreateVMImport" : { "Fn::Equals" : [ {"Ref" : "CreateVMImportRole"}, "no" ] },
         "CreateIAMuser" : { "Fn::Equals" : [ {"Ref" : "CreateNewUser"}, "yes" ] },
-        "DontCreateIAMuser" : { "Fn::Equals" : [ {"Ref" : "CreateNewUser"}, "no" ] }
+        "DontCreateIAMuser" : { "Fn::Equals" : [ {"Ref" : "CreateNewUser"}, "no" ] },
+        "CreateKMS" : { "Fn::Equals" : [ {"Ref" : "UseKMS"}, "yes" ] }
 
     },
 
