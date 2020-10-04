@@ -10,7 +10,7 @@
               },
               {
                 "Label": { "default" : "Network Configuration" },
-                "Parameters": [ "VPC", "OnPremRubrikCIDR" ]
+                "Parameters": [ "VPC", "Subnet", "OnPremRubrikCIDR" ]
               },
               {
                 "Label": { "default" : "IAM Users and Roles" },
