@@ -1,11 +1,10 @@
-name: Add File to Bucket
+name: Add Template to Bucket
 on:
   push:
     branches:
       - master
     paths:
       - 'rubrik_cloudon.template'
-
 
 jobs:
   deploy:
@@ -14,10 +13,12 @@ jobs:
     steps:
     - uses: actions/checkout@master
    
-    - name: Upload file to bucket
-      uses: DamaniN/s3-upload-github-action@master
+    - name: Install Python
+      uses: actions/setup-python@v2
       with:
-        args: --acl public-read
+        python-version: '3.7'
+        architecture: 'x64'
+    - name: Copy Template  
       env:
         FILE: ./rubrik_cloudon.template
         AWS_REGION: 'us-west-1'
@@ -25,3 +26,6 @@ jobs:
         S3_KEY: rubrik_cloudon_damani_dev.template
         AWS_ACCESS_KEY_ID: ${{ secrets.AWS_ACCESS_KEY_ID }}
         AWS_SECRET_ACCESS_KEY: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+      run: |
+        pip install --quiet --no-cache-dir awscli
+        aws s3 cp ${FILE} s3://${S3_BUCKET}/${S3_KEY}
