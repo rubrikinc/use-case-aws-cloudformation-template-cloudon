@@ -23,8 +23,7 @@
             ]
           }
 
-    },
-    
+    },  
     "Parameters": {
     
         "CreateNewS3Bucket": {
