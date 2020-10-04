@@ -44,6 +44,11 @@
             "Description": "Select the VPC for the archival location.",
             "Type": "AWS::EC2::VPC::Id"
         },
+        
+        "Subnet": {
+            "Description": "Select the Subnet for the archival location.",
+            "Type": "AWS::EC2::Subnet::Id"
+        },
 
         "OnPremRubrikCIDR" : {
             "Type"				: "String",
@@ -581,13 +586,17 @@
             "Properties" : {
                 "AliasName" : { "Fn::Join" : [ "", [ "alias/rubrik-encryption-", { "Ref": "S3BucketName" } ] ] },
                 "TargetKeyId" : {"Ref":"CreateKMSKey"}
-            }
-    }
+        }
+      }
 
         
     },
     
     "Outputs": {
+        "Region": {
+          "Description": "The AWS Region where the configuration took place.",
+          "Value" : { "Ref" : "AWS::Region" } 
+        },
         "IAMUserAccessKey" : {
           "Condition": "CreateIAMuser",
           "Description": "Access Key for the new IAM User.",
@@ -607,17 +616,17 @@
           "Description": "The KMS Key ID used for encryption.",
           "Value" : { "Ref" : "CreateKMSKey" }
         },
-        "Region": {
-          "Description": "The AWS Region where the configuration took place.",
-          "Value" : { "Ref" : "AWS::Region" } 
-        },
-        "SecurityGroupId" : {
-          "Description": "ID for the newly created Security Group",
-          "Value" : { "Fn::GetAtt" : [ "CreateSecurityGroup", "GroupId" ]}
-        },
         "VPCId" : {
             "Description": "VPC ID where the Rubrik Bolt Instance is created.",
             "Value" : { "Ref" : "VPC" }
-          }
+         },
+        "SubnetId" : {
+            "Description": "Subnet ID where the Rubrik Bolt Instance is created.",
+            "Value" : { "Ref" : "Subnet" }
+         },
+        "SecurityGroupId" : {
+          "Description": "ID for the newly created Security Group",
+          "Value" : { "Fn::GetAtt" : [ "CreateSecurityGroup", "GroupId" ]}
+        }
       }
 }
