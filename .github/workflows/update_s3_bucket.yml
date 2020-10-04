@@ -1,9 +1,11 @@
 name: Add File to Bucket
-on: push
-  branches:
-    - master
-  paths:
-    - 'rubrik_cloudon.template'
+on:
+  push:
+    branches:
+      - master
+    paths:
+      - 'rubrik_cloudon.template'
+
 
 jobs:
   deploy:
