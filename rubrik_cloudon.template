@@ -37,7 +37,9 @@
 
         "S3BucketName": {
             "Description": "The name of the S3 Bucket to be used as a Rubrik archival location.",
-            "Type": "String"
+            "Type": "String",
+            "AllowedPattern": '^[a-z][a-z0-9_-]*[a-z0-9]$',
+            "ConstraintDescription": "Bucket name must be lowercase, contain only letters and numbers, not begin or end with special charecters, and be 3-63 charecters long"
         },
 
         "VPC": {
