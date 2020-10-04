@@ -23,7 +23,7 @@ jobs:
         FILE: ./rubrik_cloudon.template
         AWS_REGION: 'us-west-1'
         S3_BUCKET: ${{ secrets.AWS_S3_BUCKET }}
-        S3_KEY: rubrik_cloudon_damani_dev.template
+        S3_KEY: rubrik_cloudon.template
         AWS_ACCESS_KEY_ID: ${{ secrets.AWS_ACCESS_KEY_ID }}
         AWS_SECRET_ACCESS_KEY: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
       run: |
