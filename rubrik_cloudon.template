@@ -24,6 +24,7 @@
           }
 
     },
+    
     "Parameters": {
     
         "CreateNewS3Bucket": {
