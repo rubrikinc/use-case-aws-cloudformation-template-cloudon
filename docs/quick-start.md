@@ -7,7 +7,10 @@ The end-to-end workflow is as follows:
 * Create Policies
 * Create IAM User, Role, and Access Key
 * Create Security Group
-* Create S3 Bucket
+* Create S3 Bucket*
+* A new KMS key is created (optional)
+
+_* The template can also consume a previously created IAM User or S3 Bucket_
 
 ![Template Design](img/rubrik-cloudon-designer.png)
 
@@ -27,10 +30,10 @@ Either select **Upload a template to Amazon S3** or, preferably, **Specify an Am
 
 ![Select Template](img/image2.png)
 
-The template file can be downloaded [here](https://s3-us-west-1.amazonaws.com/cloudformation-templates-rubrik-prod/rubrik_cloudon.template). Copy the following URL:
+The template file can be downloaded [here](https://rubrik-cfts.s3-us-west-1.amazonaws.com/rubrik_cloudon.template). Copy the following URL:
 
 ```url
-https://s3-us-west-1.amazonaws.com/cloudformation-templates-rubrik-prod/rubrik_cloudon.template
+https://rubrik-cfts.s3-us-west-1.amazonaws.com/rubrik_cloudon.template
 ```
 
 On the **Specify Details** page, enter the **Stack name** and the **S3BucketName**.
@@ -65,9 +68,9 @@ This section provides information regarding the variables used in the template.
 
 | Variable  |  Default | Description  |
 |---|---|---|
-| IAMUserName | rubrik-cloudon | The name of the IAM User to assign the new CloudOn specific policies to. |
 | CreateNewUser | yes | Create a new IAM user specific to Rubrik CloudOn. If 'no' is selected the S3 IAM policy will be attached to the provided IAMUserName which should already be created. |
 | CreateVMImportRole |yes | Create a new VM Import Role. If the vmimport role has already been created or if another stack controls the vmimport role creation process select 'no'. |
+| IAMUserName | rubrik-cloudon | The name of the IAM User to assign the new CloudOn specific policies to. |
 
 ## Optional
 
@@ -88,3 +91,6 @@ Output from the CloudFormation template:
 | IAMUserSecretKey | Secret Key for the new IAM user.  (if applicable) |
 | SecurityGroupId | ID for the newly created Security Group |
 | VPCId | VPC ID where the Rubrik Bolt Instance is created. |
+| SecurityGroupId | Security Group ID that will be appied to the Rubrik Bolt Instances. |
+| KMSKeyId         | The KMS Key ID used for encryption. (if applicable) |
+| Region           | The AWS Region where the configuration took place.  |

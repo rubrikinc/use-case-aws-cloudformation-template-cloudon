@@ -1,623 +1,691 @@
 {
-"AWSTemplateFormatVersion": "2010-09-09",
-    "Description": "Complete the AWS configuration process required for the Rubrik CloudOn feature. CloudOn provides the ability to convert a local snapshot, an archived snapshot, or a replica into an Amazon Machine Image (AMI), and then run that AMI on an Amazon virtual private cloud.",
-    "Metadata": {
-        "AWS::CloudFormation::Interface" : {
-            "ParameterGroups" : [
-              {
-                "Label": { "default" : "Storage Configuration" },
-                "Parameters": [ "CreateNewS3Bucket", "S3BucketName" ]
-              },
-              {
-                "Label": { "default" : "Network Configuration" },
-                "Parameters": [ "VPC", "OnPremRubrikCIDR" ]
-              },
-              {
-                "Label": { "default" : "IAM Users and Roles" },
-                "Parameters": [ "CreateNewUser", "CreateVMImportRole", "IAMUserName" ]
-              },
-              {
-                "Label": { "default" : "Optional" },
-                "Parameters": [ "SecurityGroupName", "SecurityGroupDescription", "SecurityGroupRoleDescription", "UserPolicyName", "UseKMS", "VMImportPolicyName" ]
-              }
-            ]
-          }
-
-    },
-
-    "Parameters": {
-    
-        "CreateNewS3Bucket": {
-            "Description": "Create a new S3 Bucket to use as a Rubrik archival location.",
-            "Type": "String",
-            "Default": "no",
-            "AllowedValues": [ "yes", "no" ],
-            "ConstraintDescription": "Choose 'yes' to create a new S3 Bucket or 'no' to use an existing bucket."
+  "AWSTemplateFormatVersion": "2010-09-09",
+  "Description": "Complete the AWS configuration process required for the Rubrik CloudOn feature. CloudOn provides the ability to convert a local snapshot, an archived snapshot, or a replica into an Amazon Machine Image (AMI), and then run that AMI on an Amazon virtual private cloud.",
+  "Metadata": {
+    "AWS::CloudFormation::Interface": {
+      "ParameterGroups": [
+        {
+          "Label": { "default": "Storage Configuration" },
+          "Parameters": ["CreateNewS3Bucket", "S3BucketName"]
         },
-
-        "S3BucketName": {
-            "Description": "The name of the S3 Bucket to be used as a Rubrik archival location.",
-            "Type": "String"
+        {
+          "Label": { "default": "Network Configuration" },
+          "Parameters": ["VPC", "Subnet", "OnPremRubrikCIDR"]
         },
-
-        "VPC": {
-            "Description": "Select the VPC for the archival location.",
-            "Type": "AWS::EC2::VPC::Id"
+        {
+          "Label": { "default": "IAM Users and Roles" },
+          "Parameters": ["CreateNewUser", "CreateVMImportRole", "IAMUserName"]
         },
-
-        "OnPremRubrikCIDR" : {
-            "Type"				: "String",
-            "Default"			: "10.79.0.0/24",
-            "Description"			: "The CIDR block for your on-premise Rubrik Cluster.",
-            "AllowedPattern"		: "(\\d{1,3})\\.(\\d{1,3})\\.(\\d{1,3})\\.(\\d{1,3})/(\\d{1,2})",
-            "ConstraintDescription"		: "Enter a valid IP CIDR range in the form x.x.x.x/x."
-          },
-        
-        "CreateVMImportRole": {
-            "Description": "Create a new VM Import Role.",
-            "Type": "String",
-            "Default": "yes",
-            "AllowedValues": [ "yes", "no" ],
-            "ConstraintDescription": "Choose 'yes' to create a new VM Import Role or 'no' if the role already exists."
-        },
-
-        "CreateNewUser" : {
-            "Description": "Create a new IAM user specific to Rubrik",
-            "Type": "String",
-            "Default": "yes",
-            "AllowedValues": [ "yes", "no" ],
-            "ConstraintDescription"	: "Choose 'yes' to create a new IAM User specific to Rubrik or 'no' to use an existing IAM User."
-          },
-
-        "IAMUserName" : {
-            "Description": "The name of the IAM User to assign the new CloudOn-specific policies to.",
-            "Type": "String",
-            "Default": "rubrik"
-        },
-
-        "UseKMS": {
-            "Description": "Create a new KMS key for encryption.",
-            "Type": "String",
-            "Default": "yes",
-            "AllowedValues": [ "yes", "no" ],
-            "ConstraintDescription": "Choose 'yes' to create a new KMS Key for encryption"
-        },
-      
-        "SecurityGroupName": {
-            "Description": "The name of the Security Group specific to Rubrik CloudOn.",
-            "Type": "String",
-            "Default": "rubrik-cloudon"
-        },
-
-        "SecurityGroupDescription": {
-            "Description": "The description of the Security Group configured to allow the ports required for Rubrik CloudOn.",
-            "Type": "String",
-            "Default": "Security group used for Rubrik CloudOn."
-        },
-
-        "SecurityGroupRoleDescription": {
-            "Description": "The description of the Security Group Ingress Role specific to Rubrik CloudOn.",
-            "Type": "String",
-            "Default": "Ports required for Rubrik CloudOn."
-        },
-        "VMImportPolicyName": {
-            "Description": "Name of Rubrik CloudOn-specific policy for the VM Import Role.",
-            "Type": "String",
-            "Default": "rubrik-vmimport-role"
+        {
+          "Label": { "default": "Optional" },
+          "Parameters": [
+            "SecurityGroupName",
+            "SecurityGroupDescription",
+            "SecurityGroupRoleDescription",
+            "UserPolicyName",
+            "UseKMS",
+            "VMImportPolicyName"
+          ]
         }
-
-    },
-
-    "Mappings": {
-
-    },
-
-    "Conditions": {
-        "CreateBucket" : { "Fn::Equals" : [ {"Ref" : "CreateNewS3Bucket"}, "yes" ] },
-        "CreateVMImport" : { "Fn::Equals" : [ {"Ref" : "CreateVMImportRole"}, "yes" ] },
-        "DontCreateVMImport" : { "Fn::Equals" : [ {"Ref" : "CreateVMImportRole"}, "no" ] },
-        "CreateIAMuser" : { "Fn::Equals" : [ {"Ref" : "CreateNewUser"}, "yes" ] },
-        "DontCreateIAMuser" : { "Fn::Equals" : [ {"Ref" : "CreateNewUser"}, "no" ] },
-        "CreateKMS" : { "Fn::Equals" : [ {"Ref" : "UseKMS"}, "yes" ] }
-
-    },
-
-    "Resources": {
-        "CreateS3Bucket": {
-            "Type": "AWS::S3::Bucket",
-            "Condition" : "CreateBucket",
-            "DeletionPolicy" : "Retain",
-            "Properties": {
-                "AccessControl": "Private",
-                "BucketName": { "Ref" : "S3BucketName" }
-                
-            }
-        },
-
-        "CreateSecurityGroup" : {
-            "Type" : "AWS::EC2::SecurityGroup",
-            "DeletionPolicy" : "Retain",
-            "Properties" : {
-              "GroupName" : { "Ref" : "SecurityGroupName" },
-              "GroupDescription" : { "Ref" : "SecurityGroupDescription" },
-              "SecurityGroupEgress" : [],
-              "SecurityGroupIngress" : [
-                {
-                  "IpProtocol" : "tcp",
-                  "FromPort" : "2002",
-                  "ToPort" : "2002",
-                  "CidrIp" : { "Ref" : "OnPremRubrikCIDR" },
-                  "Description": { "Ref" : "SecurityGroupRoleDescription" }
-                },
-                {
-                  "IpProtocol" : "tcp",
-                  "FromPort" : "7785",
-                  "ToPort" : "7785",
-                  "CidrIp" : { "Ref" : "OnPremRubrikCIDR" },
-                  "Description" : { "Ref" : "SecurityGroupRoleDescription" }
-                },
-                {
-                  "IpProtocol" : "tcp",
-                  "FromPort" : "8077",
-                  "ToPort" : "8077",
-                  "CidrIp" : { "Ref" : "OnPremRubrikCIDR" },
-                  "Description" : { "Ref" : "SecurityGroupRoleDescription" }
-                }
-              ],
-              "VpcId" : { "Ref" : "VPC" }
-            }
-          },
-          "UpdateSecurityGroupForConverter" : {
-            "Type" : "AWS::EC2::SecurityGroupIngress",
-            "DeletionPolicy" : "Retain",
-            "Properties" : {
-              "GroupId" : { "Fn::GetAtt" : [ "CreateSecurityGroup", "GroupId" ] },
-              "Description" : { "Ref" : "SecurityGroupRoleDescription" },
-              "IpProtocol" : "tcp",
-              "FromPort" : "7785",
-              "ToPort" : "7785",
-              "SourceSecurityGroupId" : { "Fn::GetAtt" : [ "CreateSecurityGroup", "GroupId" ] }
-            }
-          },
-          
-        "CreateNewVMImportRole": {
-            "Type": "AWS::IAM::Role",
-            "Condition" : "CreateVMImport",
-            "DeletionPolicy" : "Retain",
-            "Properties": {
-                "AssumeRolePolicyDocument": {
-                "Version" : "2012-10-17",
-                "Statement": [
-                    {
-                    "Effect": "Allow",
-                    "Principal": { "Service": "vmie.amazonaws.com" },
-                    "Action": "sts:AssumeRole",
-                    "Condition": {
-                        "StringEquals":{ "sts:Externalid": "vmimport" }
-                    }
-                    }
-                ]
-                },
-                "Path": "/",
-                "Policies": [],
-                "RoleName": "vmimport"
-            }
-        },
-
-        "CreatePolicyForNewVMImportRole": {
-            "Type": "AWS::IAM::Policy",
-            "DependsOn": "CreateNewVMImportRole",
-            "Condition" : "CreateVMImport",
-            "DeletionPolicy" : "Retain",
-            "Properties": {
-              "PolicyName": { "Ref" : "VMImportPolicyName" },
-              "PolicyDocument": {
-                "Version": "2012-10-17",
-                "Statement":[
-                    {
-                       "Effect":"Allow",
-                       "Action":[
-                          "s3:GetBucketLocation",
-                          "s3:GetObject",
-                          "s3:ListBucket" 
-                       ],
-                       "Resource":[
-                          { "Fn::Join" : [ "", [ "arn:aws:s3:::", { "Ref": "S3BucketName" } ] ] },
-                          { "Fn::Join" : [ "", [ "arn:aws:s3:::", { "Ref": "S3BucketName" }, "/*" ] ] }
-                       ]
-                    },
-                    {
-                       "Effect":"Allow",
-                       "Action":[
-                          "ec2:ModifySnapshotAttribute",
-                          "ec2:CopySnapshot",
-                          "ec2:RegisterImage",
-                          "ec2:Describe*"
-                       ],
-                       "Resource":"*"
-                    }
-                 ]
-              },
-              "Roles": ["vmimport"]
-            }
-          },
-        
-        "CreatePolicyForExistingVMImportRole": {
-            "Type": "AWS::IAM::Policy",
-            "Condition" : "DontCreateVMImport",
-            "DeletionPolicy" : "Retain",
-            "Properties": {
-                "PolicyName": { "Ref" : "VMImportPolicyName" },
-                "PolicyDocument": {
-                "Version": "2012-10-17",
-                "Statement":[
-                    {
-                       "Effect":"Allow",
-                       "Action":[
-                          "s3:GetBucketLocation",
-                          "s3:GetObject",
-                          "s3:ListBucket" 
-                       ],
-                       "Resource":[
-                          { "Fn::Join" : [ "", [ "arn:aws:s3:::", { "Ref": "S3BucketName" } ] ] },
-                          { "Fn::Join" : [ "", [ "arn:aws:s3:::", { "Ref": "S3BucketName" }, "/*" ] ] }
-                       ]
-                    },
-                    {
-                       "Effect":"Allow",
-                       "Action":[
-                          "ec2:ModifySnapshotAttribute",
-                          "ec2:CopySnapshot",
-                          "ec2:RegisterImage",
-                          "ec2:Describe*"
-                       ],
-                       "Resource":"*"
-                    }
-                 ]
-                },
-                "Roles": ["vmimport"]
-            }
-        },
-
-        "CreateNewIAMUser": {
-            "Type": "AWS::IAM::User",
-            "Condition" : "CreateIAMuser",
-            "DeletionPolicy" : "Retain",
-            "Properties": {
-                "UserName": { "Ref" : "IAMUserName" }
-            }
-        },
-      
-        "IAMUserAccessKeys": {
-            "Type": "AWS::IAM::AccessKey",
-            "Condition" : "CreateIAMuser",
-            "DeletionPolicy" : "Retain",
-            "DependsOn": "CreateNewIAMUser",
-            "Properties": {
-                "UserName": { "Ref" : "IAMUserName" }
-            }
-        },
-
-        "CreateCloudOutPolicyForNewUser": {
-            "Type": "AWS::IAM::Policy",
-            "DependsOn": "CreateNewIAMUser",
-            "Condition" : "CreateIAMuser",
-            "DeletionPolicy" : "Retain",
-            "Properties": {
-                "PolicyName": "Rubrik-CloudOut",
-                "PolicyDocument": {
-                    "Version": "2012-10-17",
-                    "Statement": [
-                        {
-                            "Sid": "RubrikCloudOutGlobal",
-                            "Effect": "Allow",
-                            "Action": [
-                                "s3:ListAllMyBuckets"
-                            ],
-                            "Resource": "*"
-                        },
-                        {
-                            "Sid": "RubrikCloudOutRestricted",
-                            "Effect": "Allow",
-                            "Action": [
-                                "s3:AbortMultipartUpload",
-                                "s3:CreateBucket",
-                                "s3:DeleteObject",
-                                "s3:DeleteBucket",
-                                "s3:GetBucketLocation",
-                                "s3:GetBucketAcl",
-                                "s3:ListBucket",
-                                "s3:ListMultipartUploadParts",
-                                "s3:PutObject",
-                                "s3:RestoreObject",
-                                "s3:GetObject"
-                            ],
-                            "Resource": [
-                                { "Fn::Join" : [ "", [ "arn:aws:s3:::", { "Ref": "S3BucketName" } ] ] },
-                                { "Fn::Join" : [ "", [ "arn:aws:s3:::", { "Ref": "S3BucketName" }, "/*" ] ] }
-                            ]
-                        }
-                    ]
-                },
-                "Users": [ { "Ref" : "IAMUserName" } ]
-            }
-        },
-        "CreateCloudOnPolicyForNewUser": {
-            "Type": "AWS::IAM::Policy",
-            "DependsOn": "CreateNewIAMUser",
-            "Condition" : "CreateIAMuser",
-            "DeletionPolicy" : "Retain",
-            "Properties": {
-                "PolicyName": "Rubrik-CloudOn",
-                "PolicyDocument": {
-                    "Version": "2012-10-17",
-                    "Statement": [
-                        {
-                            "Sid": "RubrikCloudOnV50",
-                            "Effect": "Allow",
-                            "Action": [
-                                "ec2:DescribeInstances",
-                                "ec2:CreateKeyPair",
-                                "ec2:CreateImage",
-                                "iam:CreateRole",           
-                                "ec2:CopyImage",
-                                "iam:PutRolePolicy",
-                                "ec2:DescribeSnapshots",
-                                "ec2:DeleteVolume",
-                                "ec2:StartInstances",
-                                "ec2:DescribeVolumes",
-                                "ec2:DescribeExportTasks",
-                                "ec2:DescribeAccountAttributes",
-                                "ec2:ImportImage",
-                                "ec2:DescribeKeyPairs",
-                                "ec2:DetachVolume",
-                                "ec2:CancelExportTask",
-                                "ec2:CreateTags",
-                                "ec2:RunInstances",
-                                "ec2:StopInstances",
-                                "ec2:CreateVolume",
-                                "ec2:DescribeImportSnapshotTasks",
-                                "ec2:DescribeSubnets",
-                                "ec2:AttachVolume",
-                                "ec2:DeregisterImage",
-                                "ec2:ImportVolume",
-                                "ec2:DeleteSnapshot",
-                                "ec2:DeleteTags",
-                                "ec2:DescribeInstanceAttribute",
-                                "ec2:DescribeAvailabilityZones",
-                                "ec2:CreateSnapshot",
-                                "ec2:ModifyInstanceAttribute",
-                                "ec2:DescribeInstanceStatus",
-                                "ec2:CreateInstanceExportTask",
-                                "ec2:TerminateInstances",
-                                "ec2:ImportInstance",
-                                "s3:CreateBucket",
-                                "s3:ListAllMyBuckets",
-                                "ec2:DescribeTags",
-                                "ec2:CancelConversionTask",
-                                "ec2:ImportSnapshot",
-                                "ec2:DescribeImportImageTasks",
-                                "ec2:DescribeSecurityGroups",
-                                "ec2:DescribeImages",
-                                "ec2:DescribeVpcs",
-                                "ec2:CancelImportTask",
-                                "ec2:DescribeConversionTasks",
-                                "kms:Encrypt",
-                                "kms:Decrypt",
-                                "kms:DescribeKey",
-                                "kms:GenerateDataKeyWithoutPlaintext",
-                                "kms:GenerateDataKey"
-                            ],
-                            "Resource": "*"
-                        }
-                    ]
-                },
-                "Users": [ { "Ref" : "IAMUserName" } ]
-            }
-        },
-        "CreateCloudOutPolicyForExistingUser": {
-            "Type": "AWS::IAM::Policy",
-            "Condition" : "DontCreateIAMuser",
-            "DeletionPolicy" : "Retain",
-            "Properties": {
-                "PolicyName": "RubrikCloudOut",
-                "PolicyDocument": {
-                    "Version": "2012-10-17",
-                    "Statement": [
-                        {
-                            "Sid": "RubrikCloudOutGlobal",
-                            "Effect": "Allow",
-                            "Action": [
-                                "s3:ListAllMyBuckets"
-                            ],
-                            "Resource": "*"
-                        },
-                        {
-                            "Sid": "RubrikCloudOutRestricted",  
-                            "Effect": "Allow",
-                            "Action": [
-                                "s3:AbortMultipartUpload",
-                                "s3:CreateBucket",
-                                "s3:DeleteObject",
-                                "s3:DeleteBucket",
-                                "s3:GetBucketLocation",
-                                "s3:GetBucketAcl",
-                                "s3:ListBucket",
-                                "s3:ListMultipartUploadParts",
-                                "s3:PutObject",
-                                "s3:RestoreObject",
-                                "s3:GetObject"
-                            ],
-                            "Resource": [
-                                { "Fn::Join" : [ "", [ "arn:aws:s3:::", { "Ref": "S3BucketName" } ] ] },
-                                { "Fn::Join" : [ "", [ "arn:aws:s3:::", { "Ref": "S3BucketName" }, "/*" ] ] }
-                            ]
-                        }
-                    ]
-                },
-                "Users": [ { "Ref" : "IAMUserName" } ]
-            }
-        },
-        "CreateCloudOnPolicyForExistingUser": {
-            "Type": "AWS::IAM::Policy",
-            "Condition" : "DontCreateIAMuser",
-            "DeletionPolicy" : "Retain",
-            "Properties": {
-                "PolicyName": "Rubrik-CloudOn",
-                "PolicyDocument": {
-                    "Version": "2012-10-17",
-                    "Statement": [
-                        {
-                            "Sid": "RubrikCloudOnV50",
-                            "Effect": "Allow",
-                            "Action": [
-                                "ec2:DescribeInstances",
-                                "ec2:CreateKeyPair",
-                                "ec2:CreateImage",
-                                "iam:CreateRole",           
-                                "ec2:CopyImage",
-                                "iam:PutRolePolicy",
-                                "ec2:DescribeSnapshots",
-                                "ec2:DeleteVolume",
-                                "ec2:StartInstances",
-                                "ec2:DescribeVolumes",
-                                "ec2:DescribeExportTasks",
-                                "ec2:DescribeAccountAttributes",
-                                "ec2:ImportImage",
-                                "ec2:DescribeKeyPairs",
-                                "ec2:DetachVolume",
-                                "ec2:CancelExportTask",
-                                "ec2:CreateTags",
-                                "ec2:RunInstances",
-                                "ec2:StopInstances",
-                                "ec2:CreateVolume",
-                                "ec2:DescribeImportSnapshotTasks",
-                                "ec2:DescribeSubnets",
-                                "ec2:AttachVolume",
-                                "ec2:DeregisterImage",
-                                "ec2:ImportVolume",
-                                "ec2:DeleteSnapshot",
-                                "ec2:DeleteTags",
-                                "ec2:DescribeInstanceAttribute",
-                                "ec2:DescribeAvailabilityZones",
-                                "ec2:CreateSnapshot",
-                                "ec2:ModifyInstanceAttribute",
-                                "ec2:DescribeInstanceStatus",
-                                "ec2:CreateInstanceExportTask",
-                                "ec2:TerminateInstances",
-                                "ec2:ImportInstance",
-                                "s3:CreateBucket",
-                                "s3:ListAllMyBuckets",
-                                "ec2:DescribeTags",
-                                "ec2:CancelConversionTask",
-                                "ec2:ImportSnapshot",
-                                "ec2:DescribeImportImageTasks",
-                                "ec2:DescribeSecurityGroups",
-                                "ec2:DescribeImages",
-                                "ec2:DescribeVpcs",
-                                "ec2:CancelImportTask",
-                                "ec2:DescribeConversionTasks",
-                                "kms:Encrypt",
-                                "kms:Decrypt",
-                                "kms:DescribeKey",
-                                "kms:GenerateDataKeyWithoutPlaintext",
-                                "kms:GenerateDataKey"
-                            ],
-                            "Resource": "*"
-                        }
-                    ]
-                },
-                "Users": [ { "Ref" : "IAMUserName" } ]
-            }
-        },
-         "CreateKMSKey" : {
-            "Type" : "AWS::KMS::Key",
-            "Condition" : "CreateKMS",
-            "Properties" : {
-                "Description" : "Rubrik archive location encryption",
-                "KeyPolicy" : {
-                    "Version": "2012-10-17",
-                    "Id": { "Fn::Join" : [ "", [ "rubrik-encryption-", { "Ref": "S3BucketName" } ] ] },
-                    "Statement": [
-                         {
-                            "Sid": "Enable IAM User Permissions",
-                            "Effect": "Allow",
-                            "Principal": {
-                                
-                                "AWS": { "Fn::Join" : [ "", [ "arn:aws:iam::", { "Ref": "AWS::AccountId" }, ":root" ] ] }
-                            },
-                            "Action": "kms:*",
-                            "Resource": "*"
-                        },
-                        {
-                            "Sid": "Allow use of the key",
-                            "Effect": "Allow",
-                            "Principal": { "AWS": { 
-                                "Fn::If": ["CreateIAMuser", { 
-                                        "Fn::GetAtt" : [ "CreateNewIAMUser", "Arn" ] 
-                                    }, { 
-                                        "Fn::Join" : [ "", [ "arn:aws:iam::", { "Ref": "AWS::AccountId" }, ":user/", {"Ref" : "IAMUserName"} ] ] 
-                                    } ]
-                                } 
-                            },
-                            "Action": [
-                                "kms:Encrypt",
-                                "kms:Decrypt",
-                                "kms:ReEncrypt*",
-                                "kms:GenerateDataKey*",
-                                "kms:DescribeKey"
-                            ], 
-                            "Resource": "*"
-                        }    
-                    ]
-                }
-            }
-        },
-
-        "KMSKeyAlias" : {
-            "Type" : "AWS::KMS::Alias",
-            "DependsOn" : "CreateKMSKey",
-            "Condition" : "CreateKMS",
-            "Properties" : {
-                "AliasName" : { "Fn::Join" : [ "", [ "alias/rubrik-encryption-", { "Ref": "S3BucketName" } ] ] },
-                "TargetKeyId" : {"Ref":"CreateKMSKey"}
-            }
+      ]
     }
+  },
 
-        
+  "Parameters": {
+    "CreateNewS3Bucket": {
+      "Description": "Create a new S3 Bucket to use as a Rubrik archival location.",
+      "Type": "String",
+      "Default": "no",
+      "AllowedValues": ["yes", "no"],
+      "ConstraintDescription": "Choose 'yes' to create a new S3 Bucket or 'no' to use an existing bucket."
+    },
+
+    "S3BucketName": {
+      "Description": "The name of the S3 Bucket to be used as a Rubrik archival location.",
+      "Type": "String",
+      "AllowedPattern": "^[a-z][a-z0-9_-]*[a-z0-9]${3,63}",
+      "ConstraintDescription": "Bucket name must be lowercase, contain only letters and numbers, not begin or end with special characters, and be 3-63 characters long"
+    },
+
+    "VPC": {
+      "Description": "Select the VPC for the archival location.",
+      "Type": "AWS::EC2::VPC::Id"
+    },
+
+    "Subnet": {
+      "Description": "Select the Subnet for the archival location.",
+      "Type": "AWS::EC2::Subnet::Id"
+    },
+
+    "OnPremRubrikCIDR": {
+      "Type": "String",
+      "Default": "10.79.0.0/24",
+      "Description": "The CIDR block for your on-premise Rubrik Cluster.",
+      "AllowedPattern": "(\\d{1,3})\\.(\\d{1,3})\\.(\\d{1,3})\\.(\\d{1,3})/(\\d{1,2})",
+      "ConstraintDescription": "Enter a valid IP CIDR range in the form x.x.x.x/x."
+    },
+
+    "CreateVMImportRole": {
+      "Description": "Create a new VM Import Role.",
+      "Type": "String",
+      "Default": "yes",
+      "AllowedValues": ["yes", "no"],
+      "ConstraintDescription": "Choose 'yes' to create a new VM Import Role or 'no' if the role already exists."
+    },
+
+    "CreateNewUser": {
+      "Description": "Create a new IAM user specific to Rubrik",
+      "Type": "String",
+      "Default": "yes",
+      "AllowedValues": ["yes", "no"],
+      "ConstraintDescription": "Choose 'yes' to create a new IAM User specific to Rubrik or 'no' to use an existing IAM User."
+    },
+
+    "IAMUserName": {
+      "Description": "The name of the IAM User to assign the new CloudOn-specific policies to.",
+      "Type": "String",
+      "Default": "rubrik"
+    },
+
+    "UseKMS": {
+      "Description": "Create a new KMS key for encryption.",
+      "Type": "String",
+      "Default": "yes",
+      "AllowedValues": ["yes", "no"],
+      "ConstraintDescription": "Choose 'yes' to create a new KMS Key for encryption"
+    },
+
+    "SecurityGroupName": {
+      "Description": "The name of the Security Group specific to Rubrik CloudOn.",
+      "Type": "String",
+      "Default": "rubrik-cloudon"
+    },
+
+    "SecurityGroupDescription": {
+      "Description": "The description of the Security Group configured to allow the ports required for Rubrik CloudOn.",
+      "Type": "String",
+      "Default": "Security group used for Rubrik CloudOn."
+    },
+
+    "SecurityGroupRoleDescription": {
+      "Description": "The description of the Security Group Ingress Role specific to Rubrik CloudOn.",
+      "Type": "String",
+      "Default": "Ports required for Rubrik CloudOn."
+    },
+    "VMImportPolicyName": {
+      "Description": "Name of Rubrik CloudOn-specific policy for the VM Import Role.",
+      "Type": "String",
+      "Default": "rubrik-vmimport-role"
+    }
+  },
+
+  "Mappings": {},
+
+  "Conditions": {
+    "CreateBucket": { "Fn::Equals": [{ "Ref": "CreateNewS3Bucket" }, "yes"] },
+    "CreateVMImport": {
+      "Fn::Equals": [{ "Ref": "CreateVMImportRole" }, "yes"]
+    },
+    "DontCreateVMImport": {
+      "Fn::Equals": [{ "Ref": "CreateVMImportRole" }, "no"]
+    },
+    "CreateIAMuser": { "Fn::Equals": [{ "Ref": "CreateNewUser" }, "yes"] },
+    "DontCreateIAMuser": { "Fn::Equals": [{ "Ref": "CreateNewUser" }, "no"] },
+    "CreateKMS": { "Fn::Equals": [{ "Ref": "UseKMS" }, "yes"] }
+  },
+
+  "Resources": {
+    "CreateS3Bucket": {
+      "Type": "AWS::S3::Bucket",
+      "Condition": "CreateBucket",
+      "DeletionPolicy": "Retain",
+      "Properties": {
+        "AccessControl": "Private",
+        "BucketName": { "Ref": "S3BucketName" }
+      }
+    },
+
+    "CreateSecurityGroup": {
+      "Type": "AWS::EC2::SecurityGroup",
+      "DeletionPolicy": "Retain",
+      "Properties": {
+        "GroupName": { "Ref": "SecurityGroupName" },
+        "GroupDescription": { "Ref": "SecurityGroupDescription" },
+        "SecurityGroupEgress": [],
+        "SecurityGroupIngress": [
+          {
+            "IpProtocol": "tcp",
+            "FromPort": "2002",
+            "ToPort": "2002",
+            "CidrIp": { "Ref": "OnPremRubrikCIDR" },
+            "Description": { "Ref": "SecurityGroupRoleDescription" }
+          },
+          {
+            "IpProtocol": "tcp",
+            "FromPort": "7785",
+            "ToPort": "7785",
+            "CidrIp": { "Ref": "OnPremRubrikCIDR" },
+            "Description": { "Ref": "SecurityGroupRoleDescription" }
+          },
+          {
+            "IpProtocol": "tcp",
+            "FromPort": "8077",
+            "ToPort": "8077",
+            "CidrIp": { "Ref": "OnPremRubrikCIDR" },
+            "Description": { "Ref": "SecurityGroupRoleDescription" }
+          }
+        ],
+        "VpcId": { "Ref": "VPC" }
+      }
     },
     
-    "Outputs": {
-        "IAMUserAccessKey" : {
-          "Condition": "CreateIAMuser",
-          "Description": "Access Key for the new IAM User.",
-          "Value" : { "Ref" : "IAMUserAccessKeys" }
-        },
-        "IAMUserSecretKey" : {
-          "Condition": "CreateIAMuser",
-          "Description": "Secret Key for the new IAM user.",
-          "Value" : { "Fn::GetAtt" : [ "IAMUserAccessKeys", "SecretAccessKey" ] }
-        },
-        "AWSBucketName" : {
-          "Description": "The S3 Bucket name.",
-          "Value" : { "Ref" : "S3BucketName" }
-        },
-        "KMSKeyId" : {
-          "Condition" : "CreateKMS",
-          "Description": "The KMS Key ID used for encryption.",
-          "Value" : { "Ref" : "CreateKMSKey" }
-        },
-        "Region": {
-          "Description": "The AWS Region where the configuration took place.",
-          "Value" : { "Ref" : "AWS::Region" } 
-        },
-        "SecurityGroupId" : {
-          "Description": "ID for the newly created Security Group",
-          "Value" : { "Fn::GetAtt" : [ "CreateSecurityGroup", "GroupId" ]}
-        },
-        "VPCId" : {
-            "Description": "VPC ID where the Rubrik Bolt Instance is created.",
-            "Value" : { "Ref" : "VPC" }
-          }
+    "UpdateSecurityGroupForConverter": {
+      "Type": "AWS::EC2::SecurityGroupIngress",
+      "DeletionPolicy": "Retain",
+      "Properties": {
+        "GroupId": { "Fn::GetAtt": ["CreateSecurityGroup", "GroupId"] },
+        "Description": { "Ref": "SecurityGroupRoleDescription" },
+        "IpProtocol": "tcp",
+        "FromPort": "7785",
+        "ToPort": "7785",
+        "SourceSecurityGroupId": {
+          "Fn::GetAtt": ["CreateSecurityGroup", "GroupId"]
+        }
       }
+    },
+
+    "CreateNewVMImportRole": {
+      "Type": "AWS::IAM::Role",
+      "Condition": "CreateVMImport",
+      "DeletionPolicy": "Retain",
+      "Properties": {
+        "AssumeRolePolicyDocument": {
+          "Version": "2012-10-17",
+          "Statement": [
+            {
+              "Effect": "Allow",
+              "Principal": { "Service": "vmie.amazonaws.com" },
+              "Action": "sts:AssumeRole",
+              "Condition": {
+                "StringEquals": { "sts:Externalid": "vmimport" }
+              }
+            }
+          ]
+        },
+        "Path": "/",
+        "Policies": [],
+        "RoleName": "vmimport"
+      }
+    },
+
+    "CreatePolicyForNewVMImportRole": {
+      "Type": "AWS::IAM::Policy",
+      "DependsOn": "CreateNewVMImportRole",
+      "Condition": "CreateVMImport",
+      "DeletionPolicy": "Retain",
+      "Properties": {
+        "PolicyName": { "Ref": "VMImportPolicyName" },
+        "PolicyDocument": {
+          "Version": "2012-10-17",
+          "Statement": [
+            {
+              "Effect": "Allow",
+              "Action": [
+                "s3:GetBucketLocation",
+                "s3:GetObject",
+                "s3:ListBucket"
+              ],
+              "Resource": [
+                {
+                  "Fn::Join": ["", ["arn:aws:s3:::", { "Ref": "S3BucketName" }]]
+                },
+                {
+                  "Fn::Join": [
+                    "",
+                    ["arn:aws:s3:::", { "Ref": "S3BucketName" }, "/*"]
+                  ]
+                }
+              ]
+            },
+            {
+              "Effect": "Allow",
+              "Action": [
+                "ec2:ModifySnapshotAttribute",
+                "ec2:CopySnapshot",
+                "ec2:RegisterImage",
+                "ec2:Describe*"
+              ],
+              "Resource": "*"
+            }
+          ]
+        },
+        "Roles": ["vmimport"]
+      }
+    },
+
+    "CreatePolicyForExistingVMImportRole": {
+      "Type": "AWS::IAM::Policy",
+      "Condition": "DontCreateVMImport",
+      "DeletionPolicy": "Retain",
+      "Properties": {
+        "PolicyName": { "Ref": "VMImportPolicyName" },
+        "PolicyDocument": {
+          "Version": "2012-10-17",
+          "Statement": [
+            {
+              "Effect": "Allow",
+              "Action": [
+                "s3:GetBucketLocation",
+                "s3:GetObject",
+                "s3:ListBucket"
+              ],
+              "Resource": [
+                {
+                  "Fn::Join": ["", ["arn:aws:s3:::", { "Ref": "S3BucketName" }]]
+                },
+                {
+                  "Fn::Join": [
+                    "",
+                    ["arn:aws:s3:::", { "Ref": "S3BucketName" }, "/*"]
+                  ]
+                }
+              ]
+            },
+            {
+              "Effect": "Allow",
+              "Action": [
+                "ec2:ModifySnapshotAttribute",
+                "ec2:CopySnapshot",
+                "ec2:RegisterImage",
+                "ec2:Describe*"
+              ],
+              "Resource": "*"
+            }
+          ]
+        },
+        "Roles": ["vmimport"]
+      }
+    },
+
+    "CreateNewIAMUser": {
+      "Type": "AWS::IAM::User",
+      "Condition": "CreateIAMuser",
+      "DeletionPolicy": "Retain",
+      "Properties": {
+        "UserName": { "Ref": "IAMUserName" }
+      }
+    },
+
+    "IAMUserAccessKeys": {
+      "Type": "AWS::IAM::AccessKey",
+      "Condition": "CreateIAMuser",
+      "DeletionPolicy": "Retain",
+      "DependsOn": "CreateNewIAMUser",
+      "Properties": {
+        "UserName": { "Ref": "IAMUserName" }
+      }
+    },
+
+    "CreateCloudOutPolicyForNewUser": {
+      "Type": "AWS::IAM::Policy",
+      "DependsOn": "CreateNewIAMUser",
+      "Condition": "CreateIAMuser",
+      "DeletionPolicy": "Retain",
+      "Properties": {
+        "PolicyName": "Rubrik-CloudOut",
+        "PolicyDocument": {
+          "Version": "2012-10-17",
+          "Statement": [
+            {
+              "Sid": "RubrikCloudOutGlobal",
+              "Effect": "Allow",
+              "Action": ["s3:ListAllMyBuckets"],
+              "Resource": "*"
+            },
+            {
+              "Sid": "RubrikCloudOutRestricted",
+              "Effect": "Allow",
+              "Action": [
+                "s3:AbortMultipartUpload",
+                "s3:CreateBucket",
+                "s3:DeleteObject",
+                "s3:DeleteBucket",
+                "s3:GetBucketLocation",
+                "s3:GetBucketAcl",
+                "s3:ListBucket",
+                "s3:ListMultipartUploadParts",
+                "s3:PutObject",
+                "s3:RestoreObject",
+                "s3:GetObject"
+              ],
+              "Resource": [
+                {
+                  "Fn::Join": ["", ["arn:aws:s3:::", { "Ref": "S3BucketName" }]]
+                },
+                {
+                  "Fn::Join": [
+                    "",
+                    ["arn:aws:s3:::", { "Ref": "S3BucketName" }, "/*"]
+                  ]
+                }
+              ]
+            }
+          ]
+        },
+        "Users": [{ "Ref": "IAMUserName" }]
+      }
+    },
+    
+    "CreateCloudOnPolicyForNewUser": {
+      "Type": "AWS::IAM::Policy",
+      "DependsOn": "CreateNewIAMUser",
+      "Condition": "CreateIAMuser",
+      "DeletionPolicy": "Retain",
+      "Properties": {
+        "PolicyName": "Rubrik-CloudOn",
+        "PolicyDocument": {
+          "Version": "2012-10-17",
+          "Statement": [
+            {
+              "Sid": "RubrikCloudOnV50",
+              "Effect": "Allow",
+              "Action": [
+                "ec2:DescribeInstances",
+                "ec2:CreateKeyPair",
+                "ec2:CreateImage",
+                "iam:CreateRole",
+                "ec2:CopyImage",
+                "iam:PutRolePolicy",
+                "ec2:DescribeSnapshots",
+                "ec2:DeleteVolume",
+                "ec2:StartInstances",
+                "ec2:DescribeVolumes",
+                "ec2:DescribeExportTasks",
+                "ec2:DescribeAccountAttributes",
+                "ec2:ImportImage",
+                "ec2:DescribeKeyPairs",
+                "ec2:DetachVolume",
+                "ec2:CancelExportTask",
+                "ec2:CreateTags",
+                "ec2:RunInstances",
+                "ec2:StopInstances",
+                "ec2:CreateVolume",
+                "ec2:DescribeImportSnapshotTasks",
+                "ec2:DescribeSubnets",
+                "ec2:AttachVolume",
+                "ec2:DeregisterImage",
+                "ec2:ImportVolume",
+                "ec2:DeleteSnapshot",
+                "ec2:DeleteTags",
+                "ec2:DescribeInstanceAttribute",
+                "ec2:DescribeAvailabilityZones",
+                "ec2:CreateSnapshot",
+                "ec2:ModifyInstanceAttribute",
+                "ec2:DescribeInstanceStatus",
+                "ec2:CreateInstanceExportTask",
+                "ec2:TerminateInstances",
+                "ec2:ImportInstance",
+                "s3:CreateBucket",
+                "s3:ListAllMyBuckets",
+                "ec2:DescribeTags",
+                "ec2:CancelConversionTask",
+                "ec2:ImportSnapshot",
+                "ec2:DescribeImportImageTasks",
+                "ec2:DescribeSecurityGroups",
+                "ec2:DescribeImages",
+                "ec2:DescribeVpcs",
+                "ec2:CancelImportTask",
+                "ec2:DescribeConversionTasks",
+                "kms:Encrypt",
+                "kms:Decrypt",
+                "kms:DescribeKey",
+                "kms:GenerateDataKeyWithoutPlaintext",
+                "kms:GenerateDataKey"
+              ],
+              "Resource": "*"
+            }
+          ]
+        },
+        "Users": [{ "Ref": "IAMUserName" }]
+      }
+    },
+    
+    "CreateCloudOutPolicyForExistingUser": {
+      "Type": "AWS::IAM::Policy",
+      "Condition": "DontCreateIAMuser",
+      "DeletionPolicy": "Retain",
+      "Properties": {
+        "PolicyName": "RubrikCloudOut",
+        "PolicyDocument": {
+          "Version": "2012-10-17",
+          "Statement": [
+            {
+              "Sid": "RubrikCloudOutGlobal",
+              "Effect": "Allow",
+              "Action": ["s3:ListAllMyBuckets"],
+              "Resource": "*"
+            },
+            {
+              "Sid": "RubrikCloudOutRestricted",
+              "Effect": "Allow",
+              "Action": [
+                "s3:AbortMultipartUpload",
+                "s3:CreateBucket",
+                "s3:DeleteObject",
+                "s3:DeleteBucket",
+                "s3:GetBucketLocation",
+                "s3:GetBucketAcl",
+                "s3:ListBucket",
+                "s3:ListMultipartUploadParts",
+                "s3:PutObject",
+                "s3:RestoreObject",
+                "s3:GetObject"
+              ],
+              "Resource": [
+                {
+                  "Fn::Join": ["", ["arn:aws:s3:::", { "Ref": "S3BucketName" }]]
+                },
+                {
+                  "Fn::Join": [
+                    "",
+                    ["arn:aws:s3:::", { "Ref": "S3BucketName" }, "/*"]
+                  ]
+                }
+              ]
+            }
+          ]
+        },
+        "Users": [{ "Ref": "IAMUserName" }]
+      }
+    },
+    
+    "CreateCloudOnPolicyForExistingUser": {
+      "Type": "AWS::IAM::Policy",
+      "Condition": "DontCreateIAMuser",
+      "DeletionPolicy": "Retain",
+      "Properties": {
+        "PolicyName": "Rubrik-CloudOn",
+        "PolicyDocument": {
+          "Version": "2012-10-17",
+          "Statement": [
+            {
+              "Sid": "RubrikCloudOnV50",
+              "Effect": "Allow",
+              "Action": [
+                "ec2:DescribeInstances",
+                "ec2:CreateKeyPair",
+                "ec2:CreateImage",
+                "iam:CreateRole",
+                "ec2:CopyImage",
+                "iam:PutRolePolicy",
+                "ec2:DescribeSnapshots",
+                "ec2:DeleteVolume",
+                "ec2:StartInstances",
+                "ec2:DescribeVolumes",
+                "ec2:DescribeExportTasks",
+                "ec2:DescribeAccountAttributes",
+                "ec2:ImportImage",
+                "ec2:DescribeKeyPairs",
+                "ec2:DetachVolume",
+                "ec2:CancelExportTask",
+                "ec2:CreateTags",
+                "ec2:RunInstances",
+                "ec2:StopInstances",
+                "ec2:CreateVolume",
+                "ec2:DescribeImportSnapshotTasks",
+                "ec2:DescribeSubnets",
+                "ec2:AttachVolume",
+                "ec2:DeregisterImage",
+                "ec2:ImportVolume",
+                "ec2:DeleteSnapshot",
+                "ec2:DeleteTags",
+                "ec2:DescribeInstanceAttribute",
+                "ec2:DescribeAvailabilityZones",
+                "ec2:CreateSnapshot",
+                "ec2:ModifyInstanceAttribute",
+                "ec2:DescribeInstanceStatus",
+                "ec2:CreateInstanceExportTask",
+                "ec2:TerminateInstances",
+                "ec2:ImportInstance",
+                "s3:CreateBucket",
+                "s3:ListAllMyBuckets",
+                "ec2:DescribeTags",
+                "ec2:CancelConversionTask",
+                "ec2:ImportSnapshot",
+                "ec2:DescribeImportImageTasks",
+                "ec2:DescribeSecurityGroups",
+                "ec2:DescribeImages",
+                "ec2:DescribeVpcs",
+                "ec2:CancelImportTask",
+                "ec2:DescribeConversionTasks",
+                "kms:Encrypt",
+                "kms:Decrypt",
+                "kms:DescribeKey",
+                "kms:GenerateDataKeyWithoutPlaintext",
+                "kms:GenerateDataKey"
+              ],
+              "Resource": "*"
+            }
+          ]
+        },
+        "Users": [{ "Ref": "IAMUserName" }]
+      }
+    },
+    
+    "CreateKMSKey": {
+      "Type": "AWS::KMS::Key",
+      "Condition": "CreateKMS",
+      "Properties": {
+        "Description": "Rubrik archive location encryption",
+        "KeyPolicy": {
+          "Version": "2012-10-17",
+          "Id": {
+            "Fn::Join": ["", ["rubrik-encryption-", { "Ref": "S3BucketName" }]]
+          },
+          "Statement": [
+            {
+              "Sid": "Enable IAM User Permissions",
+              "Effect": "Allow",
+              "Principal": {
+                "AWS": {
+                  "Fn::Join": [
+                    "",
+                    ["arn:aws:iam::", { "Ref": "AWS::AccountId" }, ":root"]
+                  ]
+                }
+              },
+              "Action": "kms:*",
+              "Resource": "*"
+            },
+            {
+              "Sid": "Allow use of the key",
+              "Effect": "Allow",
+              "Principal": {
+                "AWS": {
+                  "Fn::If": [
+                    "CreateIAMuser",
+                    {
+                      "Fn::GetAtt": ["CreateNewIAMUser", "Arn"]
+                    },
+                    {
+                      "Fn::Join": [
+                        "",
+                        [
+                          "arn:aws:iam::",
+                          { "Ref": "AWS::AccountId" },
+                          ":user/",
+                          { "Ref": "IAMUserName" }
+                        ]
+                      ]
+                    }
+                  ]
+                }
+              },
+              "Action": [
+                "kms:Encrypt",
+                "kms:Decrypt",
+                "kms:ReEncrypt*",
+                "kms:GenerateDataKey*",
+                "kms:DescribeKey"
+              ],
+              "Resource": "*"
+            }
+          ]
+        }
+      }
+    },
+
+    "KMSKeyAlias": {
+      "Type": "AWS::KMS::Alias",
+      "DependsOn": "CreateKMSKey",
+      "Condition": "CreateKMS",
+      "Properties": {
+        "AliasName": {
+          "Fn::Join": [
+            "",
+            ["alias/rubrik-encryption-", { "Ref": "S3BucketName" }]
+          ]
+        },
+        "TargetKeyId": { "Ref": "CreateKMSKey" }
+      }
+    }
+  },
+
+  "Outputs": {
+    "Region": {
+      "Description": "The AWS Region where the configuration took place.",
+      "Value": { "Ref": "AWS::Region" }
+    },
+    "IAMUserAccessKey": {
+      "Condition": "CreateIAMuser",
+      "Description": "Access Key for the new IAM User.",
+      "Value": { "Ref": "IAMUserAccessKeys" }
+    },
+    "IAMUserSecretKey": {
+      "Condition": "CreateIAMuser",
+      "Description": "Secret Key for the new IAM user.",
+      "Value": { "Fn::GetAtt": ["IAMUserAccessKeys", "SecretAccessKey"] }
+    },
+    "AWSBucketName": {
+      "Description": "The S3 Bucket name.",
+      "Value": { "Ref": "S3BucketName" }
+    },
+    "KMSKeyId": {
+      "Condition": "CreateKMS",
+      "Description": "The KMS Key ID used for encryption.",
+      "Value": { "Ref": "CreateKMSKey" }
+    },
+    "VPCId": {
+      "Description": "VPC ID where the Rubrik Bolt Instance is created.",
+      "Value": { "Ref": "VPC" }
+    },
+    "SubnetId": {
+      "Description": "Subnet ID where the Rubrik Bolt Instance is created.",
+      "Value": { "Ref": "Subnet" }
+    },
+    "SecurityGroupId": {
+      "Description": "ID for the newly created Security Group",
+      "Value": { "Fn::GetAtt": ["CreateSecurityGroup", "GroupId"] }
+    }
+  }
 }
