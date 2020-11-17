@@ -656,7 +656,7 @@
 
   "Outputs": {
     "Region": {
-      "Description": "The AWS Region where the configuration took place.",
+      "Description": "The AWS Region that the resources were created in.",
       "Value": { "Ref": "AWS::Region" }
     },
     "IAMUserAccessKey": {
@@ -683,7 +683,7 @@
       "Value": { "Ref": "VPC" }
     },
     "SubnetId": {
-      "Description": "Subnet ID where the Rubrik Bolt Instance is created.",
+      "Description": "Subnet ID where the Rubrik Bolt Instance will run.",
       "Value": { "Ref": "Subnet" }
     },
     "SecurityGroupId": {
