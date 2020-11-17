@@ -10,21 +10,27 @@
         },
         {
           "Label": { "default": "Network Configuration" },
-          "Parameters": ["VPC", "Subnet", "OnPremRubrikCIDR"]
+          "Parameters": ["VPC",
+            "Subnet",
+            "OnPremRubrikCIDR",
+            "SecurityGroupName",
+            "SecurityGroupDescription",
+            "SecurityGroupRoleDescription"
+          ]
         },
         {
           "Label": { "default": "IAM Users and Roles" },
-          "Parameters": ["CreateNewUser", "CreateVMImportRole", "IAMUserName"]
+          "Parameters": ["CreateNewUser",
+            "IAMUserName",
+            "CreateVMImportRole",
+            "VMImportPolicyName"
+          ]
         },
         {
-          "Label": { "default": "Optional" },
+          "Label": { "default": "KMS" },
           "Parameters": [
-            "SecurityGroupName",
-            "SecurityGroupDescription",
-            "SecurityGroupRoleDescription",
             "UserPolicyName",
-            "UseKMS",
-            "VMImportPolicyName"
+            "UseKMS"
           ]
         }
       ]
@@ -82,7 +88,7 @@
     },
 
     "IAMUserName": {
-      "Description": "The name of the IAM User to assign the new CloudOn-specific policies to.",
+      "Description": "The name of the new or existing IAM User to assign the new CloudOn-specific policies to.",
       "Type": "String",
       "Default": "rubrik"
     },
