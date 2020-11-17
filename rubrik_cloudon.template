@@ -28,10 +28,7 @@
         },
         {
           "Label": { "default": "KMS" },
-          "Parameters": [
-            "UserPolicyName",
-            "UseKMS"
-          ]
+          "Parameters": [ "UseKMS" ]
         }
       ]
     }
