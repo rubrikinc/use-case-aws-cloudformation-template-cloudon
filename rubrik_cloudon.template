@@ -655,9 +655,9 @@
   },
 
   "Outputs": {
-    "Region": {
-      "Description": "The AWS Region that the resources were created in.",
-      "Value": { "Ref": "AWS::Region" }
+    "AWSBucketName": {
+      "Description": "The S3 Bucket name.",
+      "Value": { "Ref": "S3BucketName" }
     },
     "IAMUserAccessKey": {
       "Condition": "CreateIAMuser",
@@ -669,26 +669,26 @@
       "Description": "Secret Key for the new IAM user.",
       "Value": { "Fn::GetAtt": ["IAMUserAccessKeys", "SecretAccessKey"] }
     },
-    "AWSBucketName": {
-      "Description": "The S3 Bucket name.",
-      "Value": { "Ref": "S3BucketName" }
-    },
     "KMSKeyId": {
       "Condition": "CreateKMS",
       "Description": "The KMS Key ID used for encryption.",
       "Value": { "Ref": "CreateKMSKey" }
     },
-    "VPCId": {
-      "Description": "VPC ID where the Rubrik Bolt Instance is created.",
-      "Value": { "Ref": "VPC" }
+    "Region": {
+      "Description": "The AWS Region that the resources were created in.",
+      "Value": { "Ref": "AWS::Region" }
+    },
+    "SecurityGroupId": {
+      "Description": "ID for the newly created Security Group",
+      "Value": { "Fn::GetAtt": ["CreateSecurityGroup", "GroupId"] }
     },
     "SubnetId": {
       "Description": "Subnet ID where the Rubrik Bolt Instance will run.",
       "Value": { "Ref": "Subnet" }
     },
-    "SecurityGroupId": {
-      "Description": "ID for the newly created Security Group",
-      "Value": { "Fn::GetAtt": ["CreateSecurityGroup", "GroupId"] }
+    "VPCId": {
+      "Description": "VPC ID where the Rubrik Bolt Instance is created.",
+      "Value": { "Ref": "VPC" }
     }
   }
 }
