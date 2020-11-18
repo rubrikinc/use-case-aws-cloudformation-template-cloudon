@@ -29,4 +29,3 @@ jobs:
       run: |
         pip install --quiet --no-cache-dir awscli
         aws s3 cp ${FILE} s3://${S3_BUCKET}/${S3_KEY}
-        aws s3api put-object-acl --bucket ${S3_BUCKET} --key ${S3_KEY} --acl public-read
