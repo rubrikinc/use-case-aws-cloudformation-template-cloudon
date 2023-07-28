@@ -1,0 +1,35 @@
+name: Add Templates to Bucket
+on:
+  pull_request:
+    types:
+      - closed
+    branches:
+      - master
+    paths:
+      - '**.template'
+
+jobs:
+  if_merged:
+    if: github.event.pull_request.merged == true
+    runs-on: ubuntu-latest
+    
+    steps:
+    - uses: actions/checkout@master
+   
+    - name: Install Python
+      uses: actions/setup-python@main
+      with:
+        python-version: '3.10'
+        architecture: 'x64'
+    - name: Copy Template  
+      env:
+        AWS_REGION: ${{ secrets.AWS_REGION }}
+        S3_BUCKET: ${{ secrets.AWS_S3_BUCKET }}
+        AWS_ACCESS_KEY_ID: ${{ secrets.AWS_ACCESS_KEY_ID }}
+        AWS_SECRET_ACCESS_KEY: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+      run: |
+        pip install --upgrade pip
+        pip install --quiet --no-cache-dir awscli
+        for FILE in $(ls *.template); do 
+          aws s3 cp ${FILE} s3://${S3_BUCKET}/
+        done
